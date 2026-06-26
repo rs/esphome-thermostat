@@ -1,0 +1,1339 @@
+# Intentionally omit api, wifi, and ota here. Provide them in the parent
+# ESPHome config that imports this file as a package.
+substitutions:
+  name: thermostat
+  friendly_name: Thermostat
+  climate_entity: climate.living_room
+  thermostat_min_tenths: "50"
+  thermostat_max_tenths: "300"
+  thermostat_default_tenths: "200"
+  thermostat_step_tenths: "5"
+  fan_mode_1: auto
+  fan_mode_2: low
+  fan_mode_3: medium
+  fan_mode_4: high
+  fan_mode_5: "on"
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  on_boot:
+    - priority: 200
+      then:
+        - lambda: |-
+            id(lcd_spi_clk)->setup();
+            id(lcd_spi_mosi)->setup();
+            id(lcd_spi_cs)->setup();
+            id(lcd_spi_cs)->digital_write(true);
+
+            auto spi_write = [](bool is_data, uint8_t byte) {
+              id(lcd_spi_cs)->digital_write(false);
+              id(lcd_spi_mosi)->digital_write(is_data);
+              id(lcd_spi_clk)->digital_write(true);
+              id(lcd_spi_clk)->digital_write(false);
+              for (int i = 7; i >= 0; i--) {
+                id(lcd_spi_mosi)->digital_write((byte >> i) & 1);
+                id(lcd_spi_clk)->digital_write(true);
+                id(lcd_spi_clk)->digital_write(false);
+              }
+              id(lcd_spi_cs)->digital_write(true);
+            };
+            auto cmd = [&](uint8_t c) { spi_write(false, c); };
+            auto dat = [&](uint8_t d) { spi_write(true, d); };
+
+            cmd(0x11); delay(120);
+            cmd(0xFF); dat(0x77); dat(0x01); dat(0x00); dat(0x00); dat(0x10);
+            cmd(0xC0); dat(0x3B); dat(0x00);
+            cmd(0xC1); dat(0x0D); dat(0x02);
+            cmd(0xC2); dat(0x21); dat(0x08);
+            cmd(0xCD); dat(0x08);
+            cmd(0xB0); dat(0x00); dat(0x11); dat(0x18); dat(0x0E); dat(0x11); dat(0x06); dat(0x07); dat(0x08); dat(0x07); dat(0x22); dat(0x04); dat(0x12); dat(0x0F); dat(0xAA); dat(0x31); dat(0x18);
+            cmd(0xB1); dat(0x00); dat(0x11); dat(0x19); dat(0x0E); dat(0x12); dat(0x07); dat(0x08); dat(0x08); dat(0x08); dat(0x22); dat(0x04); dat(0x11); dat(0x11); dat(0xA9); dat(0x32); dat(0x18);
+            cmd(0xFF); dat(0x77); dat(0x01); dat(0x00); dat(0x00); dat(0x11);
+            cmd(0xB0); dat(0x60);
+            cmd(0xB1); dat(0x30);
+            cmd(0xB2); dat(0x87);
+            cmd(0xB3); dat(0x80);
+            cmd(0xB5); dat(0x49);
+            cmd(0xB7); dat(0x85);
+            cmd(0xB8); dat(0x21);
+            cmd(0xC1); dat(0x78);
+            cmd(0xC2); dat(0x78); delay(20);
+            cmd(0xE0); dat(0x00); dat(0x1B); dat(0x02);
+            cmd(0xE1); dat(0x08); dat(0xA0); dat(0x00); dat(0x00); dat(0x07); dat(0xA0); dat(0x00); dat(0x00); dat(0x00); dat(0x44); dat(0x44);
+            cmd(0xE2); dat(0x11); dat(0x11); dat(0x44); dat(0x44); dat(0xED); dat(0xA0); dat(0x00); dat(0x00); dat(0xEC); dat(0xA0); dat(0x00); dat(0x00);
+            cmd(0xE3); dat(0x00); dat(0x00); dat(0x11); dat(0x11);
+            cmd(0xE4); dat(0x44); dat(0x44);
+            cmd(0xE5); dat(0x0A); dat(0xE9); dat(0xD8); dat(0xA0); dat(0x0C); dat(0xEB); dat(0xD8); dat(0xA0); dat(0x0E); dat(0xED); dat(0xD8); dat(0xA0); dat(0x10); dat(0xEF); dat(0xD8); dat(0xA0);
+            cmd(0xE6); dat(0x00); dat(0x00); dat(0x11); dat(0x11);
+            cmd(0xE7); dat(0x44); dat(0x44);
+            cmd(0xE8); dat(0x09); dat(0xE8); dat(0xD8); dat(0xA0); dat(0x0B); dat(0xEA); dat(0xD8); dat(0xA0); dat(0x0D); dat(0xEC); dat(0xD8); dat(0xA0); dat(0x0F); dat(0xEE); dat(0xD8); dat(0xA0);
+            cmd(0xEB); dat(0x02); dat(0x00); dat(0xE4); dat(0xE4); dat(0x88); dat(0x00); dat(0x40);
+            cmd(0xEC); dat(0x3C); dat(0x00);
+            cmd(0xED); dat(0xAB); dat(0x89); dat(0x76); dat(0x54); dat(0x02); dat(0xFF); dat(0xFF); dat(0xFF); dat(0xFF); dat(0xFF); dat(0xFF); dat(0x20); dat(0x45); dat(0x67); dat(0x98); dat(0xBA);
+            cmd(0xFF); dat(0x77); dat(0x01); dat(0x00); dat(0x00); dat(0x00);
+            cmd(0x36); dat(0x00);
+            cmd(0x3A); dat(0x66);
+            cmd(0x21); delay(120);
+            cmd(0x29);
+        - delay: 300ms
+        - light.turn_on:
+            id: display_backlight
+            brightness: 80%
+    - priority: -200
+      then:
+        - output.turn_on: speaker_amp_enable
+        - lambda: |-
+            id(last_touch_ms) = millis();
+            id(es8311_codec).set_volume(id(speaker_volume));
+            id(number_volume).publish_state(id(speaker_volume) * 100.0f);
+        - script.execute: refresh_climate_ui
+
+external_components:
+  - source: github://pr#14193
+    components: [gt911]
+    refresh: 1h
+
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240: "y"
+      CONFIG_ESP32S3_DATA_CACHE_64KB: "y"
+      CONFIG_SPIRAM_FETCH_INSTRUCTIONS: "y"
+      CONFIG_SPIRAM_RODATA: "y"
+      CONFIG_COMPILER_OPTIMIZATION_PERF: "y"
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+logger:
+
+font:
+  - file: "gfonts://Montserrat"
+    id: font_time
+    size: 36
+    glyphs: "0123456789: -"
+  - file: "gfonts://Montserrat"
+    id: font_tiny
+    size: 16
+    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .:-_/%+"
+  - file: "gfonts://Montserrat"
+    id: font_small
+    size: 20
+    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .:-_/%+"
+  - file: "gfonts://Montserrat"
+    id: font_medium
+    size: 28
+    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .:-_/%+"
+  - file: "gfonts://Montserrat"
+    id: font_target
+    size: 78
+    glyphs: "0123456789.-°"
+
+time:
+  - platform: homeassistant
+    id: ha_time
+    on_time_sync:
+      then:
+        - lvgl.label.update:
+            id: lbl_time
+            text: !lambda 'return id(ha_time).now().strftime("%H:%M");'
+
+interval:
+  - interval: 30s
+    then:
+      - if:
+          condition:
+            lambda: 'return id(ha_time).now().is_valid();'
+          then:
+            - lvgl.label.update:
+                id: lbl_time
+                text: !lambda 'return id(ha_time).now().strftime("%H:%M");'
+  - interval: 100ms
+    then:
+      - if:
+          condition:
+            lambda: 'return id(is_listening);'
+          then:
+            - lambda: |-
+                id(anim_val) += id(anim_dir) * 10;
+                if (id(anim_val) >= 100) { id(anim_val) = 100; id(anim_dir) = -1; }
+                if (id(anim_val) <= 0) { id(anim_val) = 0; id(anim_dir) = 1; }
+                lv_bar_set_value(id(bar_listening), id(anim_val), LV_ANIM_OFF);
+  - interval: 10s
+    then:
+      - lambda: |-
+          if (id(screen_timeout_sec) == 0 || !id(screen_on)) return;
+          if (millis() - id(last_touch_ms) > (uint32_t) id(screen_timeout_sec) * 1000UL) {
+            id(screen_on) = false;
+            auto call = id(display_backlight).make_call();
+            call.set_state(false);
+            call.perform();
+          }
+
+i2s_audio:
+  - id: i2s_bus
+    i2s_lrclk_pin: GPIO7
+    i2s_bclk_pin: GPIO16
+    i2s_mclk_pin: GPIO5
+
+audio_dac:
+  - platform: es8311
+    id: es8311_codec
+    i2c_id: bus_a
+    address: 0x18
+    bits_per_sample: 16bit
+    sample_rate: 16000
+    use_mclk: true
+
+audio_adc:
+  - platform: es7210
+    id: es7210_codec
+    i2c_id: bus_a
+    address: 0x40
+    bits_per_sample: 16bit
+    sample_rate: 16000
+    mic_gain: 33db
+
+microphone:
+  - platform: i2s_audio
+    id: board_mic
+    i2s_audio_id: i2s_bus
+    i2s_din_pin: GPIO15
+    adc_type: external
+    pdm: false
+    channel: left
+
+speaker:
+  - platform: i2s_audio
+    id: board_speaker
+    i2s_audio_id: i2s_bus
+    i2s_dout_pin: GPIO6
+    dac_type: external
+    channel: mono
+
+globals:
+  - id: speaker_volume
+    type: float
+    restore_value: true
+    initial_value: '0.7'
+  - id: screen_timeout_sec
+    type: int
+    restore_value: true
+    initial_value: '60'
+  - id: screen_brightness
+    type: float
+    restore_value: true
+    initial_value: '0.8'
+  - id: screen_on
+    type: bool
+    initial_value: 'true'
+  - id: last_touch_ms
+    type: uint32_t
+    initial_value: '0'
+  - id: is_listening
+    type: bool
+    initial_value: 'false'
+  - id: anim_val
+    type: int
+    initial_value: '0'
+  - id: anim_dir
+    type: int
+    initial_value: '1'
+  - id: pending_target_temperature
+    type: float
+    initial_value: '20.0'
+
+script:
+  - id: refresh_climate_ui
+    then:
+      - lambda: |-
+          auto upper = [](std::string s) {
+            for (auto &c : s) c = ::toupper(c);
+            return s;
+          };
+          auto temp_label = [](float value, int precision) {
+            if (std::isnan(value)) return std::string("--.-°");
+            char buf[16];
+            snprintf(buf, sizeof(buf), precision == 0 ? "%.0f°" : "%.1f°", value);
+            return std::string(buf);
+          };
+          auto set_checked = [](lv_obj_t *obj, bool checked) {
+            if (checked) {
+              lv_obj_add_state(obj, LV_STATE_CHECKED);
+            } else {
+              lv_obj_clear_state(obj, LV_STATE_CHECKED);
+            }
+          };
+
+          const float current = id(ha_current_temperature).state;
+          const float target = id(ha_target_temperature).state;
+          const std::string mode = id(ha_climate_state).state;
+          const std::string action = id(ha_hvac_action).state;
+          const std::string fan = id(ha_fan_mode).state;
+
+          if (!std::isnan(current)) {
+            lv_label_set_text(id(lbl_current_temp), temp_label(current, 1).c_str());
+          } else {
+            lv_label_set_text(id(lbl_current_temp), "--.-°");
+          }
+
+          if (!std::isnan(target)) {
+            id(pending_target_temperature) = target;
+            lv_label_set_text(id(lbl_target_temp), temp_label(target, 1).c_str());
+            lv_arc_set_value(id(arc_thermostat), (int) lroundf(target * 10.0f));
+          }
+
+          lv_label_set_text(id(lbl_mode_value), upper(mode).c_str());
+          lv_label_set_text(id(lbl_mode_chip), upper(mode).c_str());
+          lv_label_set_text(id(lbl_fan_value), upper(fan).c_str());
+          lv_label_set_text(id(lbl_fan_chip), ("FAN " + upper(fan)).c_str());
+
+          const std::string action_text = action.empty() || action == "unknown" ? "IDLE" : upper(action);
+          lv_label_set_text(id(lbl_hvac_action), action_text.c_str());
+
+          const bool cooling = action == "cooling" || mode == "cool";
+          const uint32_t accent = cooling ? 0x2095F6 : 0xFF6F22;
+          lv_obj_set_style_text_color(id(lbl_hvac_action), lv_color_hex(accent), LV_PART_MAIN);
+          lv_obj_set_style_text_color(id(lbl_current_temp), lv_color_hex(accent), LV_PART_MAIN);
+          lv_obj_set_style_arc_color(id(arc_thermostat), lv_color_hex(mode == "off" ? 0x292929 : accent), LV_PART_INDICATOR);
+
+          set_checked(id(btn_mode_off), mode == "off");
+          set_checked(id(btn_mode_heat), mode == "heat");
+          set_checked(id(btn_mode_cool), mode == "cool");
+          set_checked(id(btn_mode_auto), mode == "heat_cool" || mode == "auto");
+
+          set_checked(id(btn_fan_1), fan == "${fan_mode_1}");
+          set_checked(id(btn_fan_2), fan == "${fan_mode_2}");
+          set_checked(id(btn_fan_3), fan == "${fan_mode_3}");
+          set_checked(id(btn_fan_4), fan == "${fan_mode_4}");
+          set_checked(id(btn_fan_5), fan == "${fan_mode_5}");
+  - id: send_target_temperature
+    mode: restart
+    then:
+      - homeassistant.action:
+          action: climate.set_temperature
+          data:
+            entity_id: ${climate_entity}
+          data_template:
+            temperature: "{{ target_temperature }}"
+          variables:
+            target_temperature: |-
+              return id(pending_target_temperature);
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Volume Down"
+    filters:
+      - delayed_on: 20ms
+    on_press:
+      - lambda: |-
+          float v = id(speaker_volume) - 0.1f;
+          if (v < 0.1f) v = 0.1f;
+          id(speaker_volume) = v;
+          id(es8311_codec).set_volume(v);
+          id(number_volume).publish_state(v * 100.0f);
+  - platform: gpio
+    pin:
+      pca9554: expander
+      number: 4
+      mode:
+        input: true
+      inverted: true
+    name: "Volume Up"
+    filters:
+      - delayed_on: 20ms
+    on_press:
+      - lambda: |-
+          float v = id(speaker_volume) + 0.1f;
+          if (v > 1.0f) v = 1.0f;
+          id(speaker_volume) = v;
+          id(es8311_codec).set_volume(v);
+          id(number_volume).publish_state(v * 100.0f);
+
+micro_wake_word:
+  id: mww
+  models:
+    - model: okay_nabu
+      probability_cutoff: 0.5
+    - model: hey_jarvis
+      probability_cutoff: 0.5
+  on_wake_word_detected:
+    - lambda: |-
+        id(last_touch_ms) = millis();
+        if (!id(screen_on)) {
+          id(screen_on) = true;
+          auto call = id(display_backlight).make_call();
+          call.set_state(true);
+          call.set_brightness(id(screen_brightness));
+          call.perform();
+        }
+        id(is_listening) = true;
+        lv_obj_clear_flag(id(voice_overlay), LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(id(bar_listening), LV_OBJ_FLAG_HIDDEN);
+    - lvgl.label.update:
+        id: lbl_voice_status
+        text: "Wake word"
+    - voice_assistant.start:
+        wake_word: !lambda return wake_word;
+
+voice_assistant:
+  id: va
+  microphone: board_mic
+  speaker: board_speaker
+  micro_wake_word: mww
+  noise_suppression_level: 2
+  auto_gain: 31dBFS
+  volume_multiplier: 4.0
+  on_client_connected:
+    - lvgl.label.update:
+        id: lbl_voice_status
+        text: "Ready"
+    - if:
+        condition:
+          lambda: 'return id(switch_microphone).state;'
+        then:
+          - micro_wake_word.start:
+              id: mww
+  on_client_disconnected:
+    - lvgl.label.update:
+        id: lbl_voice_status
+        text: "Disconnected"
+    - micro_wake_word.stop:
+        id: mww
+    - voice_assistant.stop:
+  on_listening:
+    - lambda: |-
+        id(is_listening) = true;
+        lv_obj_clear_flag(id(voice_overlay), LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(id(bar_listening), LV_OBJ_FLAG_HIDDEN);
+    - lvgl.label.update:
+        id: lbl_voice_status
+        text: "Listening"
+  on_tts_stream_start:
+    - lambda: |-
+        id(is_listening) = false;
+        lv_obj_clear_flag(id(voice_overlay), LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(id(bar_listening), LV_OBJ_FLAG_HIDDEN);
+        id(es8311_codec).set_volume(id(speaker_volume));
+    - lvgl.label.update:
+        id: lbl_voice_status
+        text: "Answering"
+    - micro_wake_word.stop:
+        id: mww
+    - audio_dac.mute_off:
+        id: es8311_codec
+  on_tts_stream_end:
+    - lvgl.label.update:
+        id: lbl_voice_status
+        text: "Ready"
+  on_end:
+    - lambda: |-
+        id(is_listening) = false;
+        lv_obj_add_flag(id(bar_listening), LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(id(voice_overlay), LV_OBJ_FLAG_HIDDEN);
+    - if:
+        condition:
+          lambda: 'return id(switch_microphone).state;'
+        then:
+          - micro_wake_word.start:
+              id: mww
+  on_idle:
+    - lambda: |-
+        id(is_listening) = false;
+        lv_obj_add_flag(id(bar_listening), LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(id(voice_overlay), LV_OBJ_FLAG_HIDDEN);
+    - if:
+        condition:
+          lambda: 'return id(switch_microphone).state;'
+        then:
+          - micro_wake_word.start:
+              id: mww
+  on_error:
+    - lambda: |-
+        id(is_listening) = false;
+        lv_obj_clear_flag(id(voice_overlay), LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(id(bar_listening), LV_OBJ_FLAG_HIDDEN);
+    - lvgl.label.update:
+        id: lbl_voice_status
+        text: "Voice error"
+    - delay: 1500ms
+    - lambda: 'lv_obj_add_flag(id(voice_overlay), LV_OBJ_FLAG_HIDDEN);'
+    - if:
+        condition:
+          lambda: 'return id(switch_microphone).state;'
+        then:
+          - micro_wake_word.start:
+              id: mww
+
+i2c:
+  - id: bus_a
+    sda: GPIO47
+    scl: GPIO48
+    frequency: 100kHz
+
+pca9554:
+  - id: expander
+    i2c_id: bus_a
+    address: 0x20
+
+spi:
+  - id: display_spi
+    interface: software
+    clk_pin:
+      pca9554: expander
+      number: 2
+      id: lcd_spi_clk
+    mosi_pin:
+      pca9554: expander
+      number: 1
+      id: lcd_spi_mosi
+
+output:
+  - platform: ledc
+    pin: GPIO4
+    id: backlight_pwm
+    frequency: 5000Hz
+    inverted: true
+  - platform: gpio
+    id: speaker_amp_enable
+    pin:
+      pca9554: expander
+      number: 3
+      mode:
+        output: true
+
+light:
+  - platform: monochromatic
+    name: "Display Backlight"
+    id: display_backlight
+    output: backlight_pwm
+    restore_mode: ALWAYS_ON
+    default_transition_length: 1s
+
+touchscreen:
+  - platform: gt911
+    id: touch_panel
+    i2c_id: bus_a
+    display: lcd_display
+    address: 0x14
+    update_interval: 20ms
+    on_touch:
+      - lambda: |-
+          if (!id(switch_touchscreen).state) return;
+          id(last_touch_ms) = millis();
+          if (!id(screen_on)) {
+            id(screen_on) = true;
+            auto call = id(display_backlight).make_call();
+            call.set_state(true);
+            call.set_brightness(id(screen_brightness));
+            call.perform();
+          }
+
+sensor:
+  - platform: homeassistant
+    id: ha_current_temperature
+    entity_id: ${climate_entity}
+    attribute: current_temperature
+    internal: true
+    on_value:
+      - script.execute: refresh_climate_ui
+  - platform: homeassistant
+    id: ha_target_temperature
+    entity_id: ${climate_entity}
+    attribute: temperature
+    internal: true
+    on_value:
+      - script.execute: refresh_climate_ui
+  - platform: wifi_signal
+    id: wifi_signal_db
+    update_interval: 30s
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: lbl_wifi
+          text: !lambda |-
+            if (x > -50) return std::string("WiFi +++");
+            if (x > -70) return std::string("WiFi ++");
+            return std::string("WiFi --");
+
+text_sensor:
+  - platform: homeassistant
+    id: ha_climate_state
+    entity_id: ${climate_entity}
+    internal: true
+    on_value:
+      - script.execute: refresh_climate_ui
+  - platform: homeassistant
+    id: ha_hvac_action
+    entity_id: ${climate_entity}
+    attribute: hvac_action
+    internal: true
+    on_value:
+      - script.execute: refresh_climate_ui
+  - platform: homeassistant
+    id: ha_fan_mode
+    entity_id: ${climate_entity}
+    attribute: fan_mode
+    internal: true
+    on_value:
+      - script.execute: refresh_climate_ui
+  - platform: wifi_info
+    ip_address:
+      id: wifi_ip
+      internal: true
+      on_value:
+        - lvgl.label.update:
+            id: lbl_ip
+            text: !lambda 'return "IP " + x;'
+
+number:
+  - platform: template
+    name: "Volume"
+    id: number_volume
+    icon: mdi:volume-high
+    min_value: 10
+    max_value: 100
+    step: 5
+    unit_of_measurement: "%"
+    mode: slider
+    optimistic: true
+    set_action:
+      - lambda: |-
+          id(speaker_volume) = x / 100.0f;
+          id(es8311_codec).set_volume(id(speaker_volume));
+      - lvgl.slider.update:
+          id: slider_volume
+          value: !lambda 'return (int) x;'
+
+switch:
+  - platform: template
+    name: "Touchscreen"
+    id: switch_touchscreen
+    icon: mdi:gesture-tap
+    restore_mode: RESTORE_DEFAULT_ON
+    optimistic: true
+  - platform: template
+    name: "Microphone"
+    id: switch_microphone
+    icon: mdi:microphone
+    restore_mode: RESTORE_DEFAULT_ON
+    optimistic: true
+    on_turn_on:
+      - micro_wake_word.start:
+          id: mww
+    on_turn_off:
+      - voice_assistant.stop:
+      - micro_wake_word.stop:
+          id: mww
+
+display:
+  - platform: mipi_rgb
+    id: lcd_display
+    model: CUSTOM
+    cs_pin:
+      pca9554: expander
+      number: 0
+      id: lcd_spi_cs
+    data_rate: 1MHz
+    data_pins:
+      blue: [40, 41, 42, 2, 1]
+      green: [21, 8, 18, 45, 38, 39]
+      red: [10, 11, 12, 13, 14]
+    de_pin: GPIO17
+    hsync_pin: GPIO46
+    vsync_pin: GPIO3
+    pclk_pin: GPIO9
+    pclk_frequency: 16MHz
+    pclk_inverted: false
+    pixel_mode: 16bit
+    dimensions:
+      width: 480
+      height: 480
+    hsync_pulse_width: 10
+    hsync_back_porch: 10
+    hsync_front_porch: 20
+    vsync_pulse_width: 10
+    vsync_back_porch: 10
+    vsync_front_porch: 10
+    invert_colors: false
+    init_sequence:
+      - [0x11]
+      - [0x29]
+
+lvgl:
+  displays:
+    - lcd_display
+  touchscreens:
+    - touchscreen_id: touch_panel
+  bottom_layer:
+    bg_color: 0x0D1117
+  text_color: 0xFFFFFF
+  on_idle:
+    - timeout: 60s
+      then:
+        - lvgl.page.show: thermostat_page
+  pages:
+    - id: thermostat_page
+      bg_color: 0x0D1117
+      widgets:
+        - label:
+            id: lbl_wifi
+            text: "WiFi"
+            text_font: font_tiny
+            text_color: 0x7DD3FC
+            align: TOP_LEFT
+            x: 18
+            y: 16
+        - label:
+            id: lbl_time
+            text: "--:--"
+            text_font: font_time
+            text_color: 0xE5E7EB
+            align: TOP_MID
+            y: 10
+        - button:
+            id: btn_settings
+            align: TOP_RIGHT
+            x: -16
+            y: 12
+            width: 72
+            height: 36
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x334155
+            radius: 8
+            shadow_width: 0
+            on_click:
+              - lvgl.page.show: settings_page
+            widgets:
+              - label:
+                  text: "SET"
+                  text_font: font_tiny
+                  text_color: 0xCBD5E1
+                  align: CENTER
+        - arc:
+            id: arc_thermostat
+            align: CENTER
+            y: -4
+            width: 410
+            height: 410
+            adjustable: true
+            value: ${thermostat_default_tenths}
+            min_value: ${thermostat_min_tenths}
+            max_value: ${thermostat_max_tenths}
+            arc_width: 26
+            arc_rounded: true
+            arc_color: 0x292929
+            indicator:
+              arc_color: 0xFF6F22
+              arc_width: 26
+              arc_rounded: true
+            knob:
+              bg_color: 0xFFFFFF
+              border_width: 0
+            on_value:
+              - lvgl.label.update:
+                  id: lbl_target_temp
+                  text:
+                    format: "%.1f°"
+                    args: [ 'x / 10.0f' ]
+            on_release:
+              - lambda: |-
+                  int rounded = ((int) lroundf(x / ${thermostat_step_tenths})) * ${thermostat_step_tenths};
+                  if (rounded < ${thermostat_min_tenths}) rounded = ${thermostat_min_tenths};
+                  if (rounded > ${thermostat_max_tenths}) rounded = ${thermostat_max_tenths};
+                  id(pending_target_temperature) = rounded / 10.0f;
+                  lv_arc_set_value(id(arc_thermostat), rounded);
+              - script.execute: send_target_temperature
+        - label:
+            id: lbl_hvac_action
+            text: "IDLE"
+            text_font: font_small
+            text_color: 0xFF6F22
+            align: CENTER
+            y: -110
+        - label:
+            id: lbl_target_temp
+            text: "20.0°"
+            text_font: font_target
+            text_color: 0xFFFFFF
+            align: CENTER
+            y: -30
+        - label:
+            text: "ROOM"
+            text_font: font_tiny
+            text_color: 0x64748B
+            align: CENTER
+            y: 56
+        - label:
+            id: lbl_current_temp
+            text: "--.-°"
+            text_font: font_medium
+            text_color: 0xFF6F22
+            align: CENTER
+            y: 88
+        - button:
+            id: btn_mode_chip
+            align: BOTTOM_LEFT
+            x: 34
+            y: -36
+            width: 124
+            height: 44
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x475569
+            radius: 6
+            shadow_width: 0
+            on_click:
+              - lvgl.page.show:
+                  id: mode_page
+                  animation: MOVE_LEFT
+                  time: 200ms
+            widgets:
+              - label:
+                  id: lbl_mode_chip
+                  text: "MODE"
+                  text_font: font_small
+                  text_color: 0xF8FAFC
+                  align: CENTER
+        - button:
+            id: btn_fan_chip
+            align: BOTTOM_MID
+            y: -36
+            width: 138
+            height: 44
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x475569
+            radius: 6
+            shadow_width: 0
+            on_click:
+              - lvgl.page.show:
+                  id: fan_page
+                  animation: MOVE_LEFT
+                  time: 200ms
+            widgets:
+              - label:
+                  id: lbl_fan_chip
+                  text: "FAN"
+                  text_font: font_small
+                  text_color: 0xF8FAFC
+                  align: CENTER
+        - button:
+            align: BOTTOM_RIGHT
+            x: -34
+            y: -36
+            width: 92
+            height: 44
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x475569
+            radius: 6
+            shadow_width: 0
+            on_click:
+              - voice_assistant.start:
+            widgets:
+              - label:
+                  text: "VOICE"
+                  text_font: font_small
+                  text_color: 0xF8FAFC
+                  align: CENTER
+
+    - id: mode_page
+      bg_color: 0x0D1117
+      widgets:
+        - button:
+            align: TOP_LEFT
+            x: 18
+            y: 18
+            width: 72
+            height: 38
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x334155
+            radius: 8
+            shadow_width: 0
+            on_click:
+              - lvgl.page.show:
+                  id: thermostat_page
+                  animation: MOVE_RIGHT
+                  time: 200ms
+            widgets:
+              - label:
+                  text: "BACK"
+                  text_font: font_tiny
+                  align: CENTER
+        - label:
+            text: "MODE"
+            text_font: font_medium
+            text_color: 0xE5E7EB
+            align: TOP_MID
+            y: 22
+        - label:
+            id: lbl_mode_value
+            text: "--"
+            text_font: font_small
+            text_color: 0x94A3B8
+            align: TOP_MID
+            y: 62
+        - button:
+            id: btn_mode_off
+            checkable: true
+            align: CENTER
+            x: -112
+            y: -70
+            width: 152
+            height: 78
+            bg_color: 0x111827
+            checked:
+              bg_color: 0x606060
+            border_width: 1
+            border_color: 0x334155
+            radius: 8
+            shadow_width: 0
+            on_click:
+              - homeassistant.action:
+                  action: climate.set_hvac_mode
+                  data:
+                    entity_id: ${climate_entity}
+                    hvac_mode: "off"
+            widgets:
+              - label:
+                  text: "OFF"
+                  text_font: font_medium
+                  align: CENTER
+        - button:
+            id: btn_mode_heat
+            checkable: true
+            align: CENTER
+            x: 112
+            y: -70
+            width: 152
+            height: 78
+            bg_color: 0x111827
+            checked:
+              bg_color: 0xFF6F22
+            border_width: 1
+            border_color: 0x334155
+            radius: 8
+            shadow_width: 0
+            on_click:
+              - homeassistant.action:
+                  action: climate.set_hvac_mode
+                  data:
+                    entity_id: ${climate_entity}
+                    hvac_mode: heat
+            widgets:
+              - label:
+                  text: "HEAT"
+                  text_font: font_medium
+                  align: CENTER
+        - button:
+            id: btn_mode_cool
+            checkable: true
+            align: CENTER
+            x: -112
+            y: 48
+            width: 152
+            height: 78
+            bg_color: 0x111827
+            checked:
+              bg_color: 0x2095F6
+            border_width: 1
+            border_color: 0x334155
+            radius: 8
+            shadow_width: 0
+            on_click:
+              - homeassistant.action:
+                  action: climate.set_hvac_mode
+                  data:
+                    entity_id: ${climate_entity}
+                    hvac_mode: cool
+            widgets:
+              - label:
+                  text: "COOL"
+                  text_font: font_medium
+                  align: CENTER
+        - button:
+            id: btn_mode_auto
+            checkable: true
+            align: CENTER
+            x: 112
+            y: 48
+            width: 152
+            height: 78
+            bg_color: 0x111827
+            checked:
+              bg_color: 0x10B981
+            border_width: 1
+            border_color: 0x334155
+            radius: 8
+            shadow_width: 0
+            on_click:
+              - homeassistant.action:
+                  action: climate.set_hvac_mode
+                  data:
+                    entity_id: ${climate_entity}
+                    hvac_mode: heat_cool
+            widgets:
+              - label:
+                  text: "AUTO"
+                  text_font: font_medium
+                  align: CENTER
+
+    - id: fan_page
+      bg_color: 0x0D1117
+      widgets:
+        - button:
+            align: TOP_LEFT
+            x: 18
+            y: 18
+            width: 72
+            height: 38
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x334155
+            radius: 8
+            shadow_width: 0
+            on_click:
+              - lvgl.page.show:
+                  id: thermostat_page
+                  animation: MOVE_RIGHT
+                  time: 200ms
+            widgets:
+              - label:
+                  text: "BACK"
+                  text_font: font_tiny
+                  align: CENTER
+        - label:
+            text: "FAN"
+            text_font: font_medium
+            text_color: 0xE5E7EB
+            align: TOP_MID
+            y: 22
+        - label:
+            id: lbl_fan_value
+            text: "--"
+            text_font: font_small
+            text_color: 0x94A3B8
+            align: TOP_MID
+            y: 62
+        - button:
+            id: btn_fan_1
+            checkable: true
+            align: TOP_MID
+            y: 110
+            width: 280
+            height: 52
+            bg_color: 0x111827
+            checked:
+              bg_color: 0x2095F6
+            border_width: 1
+            border_color: 0x334155
+            radius: 8
+            shadow_width: 0
+            on_click:
+              - homeassistant.action:
+                  action: climate.set_fan_mode
+                  data:
+                    entity_id: ${climate_entity}
+                    fan_mode: ${fan_mode_1}
+            widgets:
+              - label:
+                  text: "AUTO"
+                  text_font: font_small
+                  align: CENTER
+        - button:
+            id: btn_fan_2
+            checkable: true
+            align: TOP_MID
+            y: 172
+            width: 280
+            height: 52
+            bg_color: 0x111827
+            checked:
+              bg_color: 0x2095F6
+            border_width: 1
+            border_color: 0x334155
+            radius: 8
+            shadow_width: 0
+            on_click:
+              - homeassistant.action:
+                  action: climate.set_fan_mode
+                  data:
+                    entity_id: ${climate_entity}
+                    fan_mode: ${fan_mode_2}
+            widgets:
+              - label:
+                  text: "LOW"
+                  text_font: font_small
+                  align: CENTER
+        - button:
+            id: btn_fan_3
+            checkable: true
+            align: TOP_MID
+            y: 234
+            width: 280
+            height: 52
+            bg_color: 0x111827
+            checked:
+              bg_color: 0x2095F6
+            border_width: 1
+            border_color: 0x334155
+            radius: 8
+            shadow_width: 0
+            on_click:
+              - homeassistant.action:
+                  action: climate.set_fan_mode
+                  data:
+                    entity_id: ${climate_entity}
+                    fan_mode: ${fan_mode_3}
+            widgets:
+              - label:
+                  text: "MEDIUM"
+                  text_font: font_small
+                  align: CENTER
+        - button:
+            id: btn_fan_4
+            checkable: true
+            align: TOP_MID
+            y: 296
+            width: 280
+            height: 52
+            bg_color: 0x111827
+            checked:
+              bg_color: 0x2095F6
+            border_width: 1
+            border_color: 0x334155
+            radius: 8
+            shadow_width: 0
+            on_click:
+              - homeassistant.action:
+                  action: climate.set_fan_mode
+                  data:
+                    entity_id: ${climate_entity}
+                    fan_mode: ${fan_mode_4}
+            widgets:
+              - label:
+                  text: "HIGH"
+                  text_font: font_small
+                  align: CENTER
+        - button:
+            id: btn_fan_5
+            checkable: true
+            align: TOP_MID
+            y: 358
+            width: 280
+            height: 52
+            bg_color: 0x111827
+            checked:
+              bg_color: 0x2095F6
+            border_width: 1
+            border_color: 0x334155
+            radius: 8
+            shadow_width: 0
+            on_click:
+              - homeassistant.action:
+                  action: climate.set_fan_mode
+                  data:
+                    entity_id: ${climate_entity}
+                    fan_mode: ${fan_mode_5}
+            widgets:
+              - label:
+                  text: "ON"
+                  text_font: font_small
+                  align: CENTER
+
+    - id: settings_page
+      bg_color: 0x0D1117
+      widgets:
+        - button:
+            align: TOP_LEFT
+            x: 18
+            y: 18
+            width: 72
+            height: 38
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x334155
+            radius: 8
+            shadow_width: 0
+            on_click:
+              - lvgl.page.show: thermostat_page
+            widgets:
+              - label:
+                  text: "BACK"
+                  text_font: font_tiny
+                  align: CENTER
+        - label:
+            text: "SETTINGS"
+            text_font: font_medium
+            text_color: 0xE5E7EB
+            align: TOP_MID
+            y: 22
+        - label:
+            text: "BRIGHTNESS"
+            text_font: font_small
+            text_color: 0x94A3B8
+            align: TOP_LEFT
+            x: 30
+            y: 100
+        - slider:
+            id: slider_brightness
+            align: TOP_MID
+            y: 136
+            width: 360
+            height: 18
+            min_value: 10
+            max_value: 100
+            value: 80
+            indicator:
+              bg_color: 0x2095F6
+            knob:
+              bg_color: 0xFFFFFF
+            on_value:
+              - lambda: |-
+                  id(screen_brightness) = x / 100.0f;
+                  auto call = id(display_backlight).make_call();
+                  call.set_state(true);
+                  call.set_brightness(id(screen_brightness));
+                  call.perform();
+        - label:
+            text: "VOLUME"
+            text_font: font_small
+            text_color: 0x94A3B8
+            align: TOP_LEFT
+            x: 30
+            y: 188
+        - slider:
+            id: slider_volume
+            align: TOP_MID
+            y: 224
+            width: 360
+            height: 18
+            min_value: 10
+            max_value: 100
+            value: 70
+            indicator:
+              bg_color: 0x2095F6
+            knob:
+              bg_color: 0xFFFFFF
+            on_release:
+              - number.set:
+                  id: number_volume
+                  value: !lambda 'return x;'
+        - label:
+            text: "SCREEN"
+            text_font: font_small
+            text_color: 0x94A3B8
+            align: TOP_LEFT
+            x: 30
+            y: 276
+        - button:
+            align: TOP_LEFT
+            x: 30
+            y: 314
+            width: 100
+            height: 44
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x334155
+            radius: 8
+            shadow_width: 0
+            on_click:
+              - lambda: 'id(screen_timeout_sec) = 0;'
+            widgets:
+              - label:
+                  text: "ALWAYS"
+                  text_font: font_tiny
+                  align: CENTER
+        - button:
+            align: TOP_MID
+            y: 314
+            width: 100
+            height: 44
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x334155
+            radius: 8
+            shadow_width: 0
+            on_click:
+              - lambda: 'id(screen_timeout_sec) = 60;'
+            widgets:
+              - label:
+                  text: "1 MIN"
+                  text_font: font_tiny
+                  align: CENTER
+        - button:
+            align: TOP_RIGHT
+            x: -30
+            y: 314
+            width: 100
+            height: 44
+            bg_color: 0x111827
+            border_width: 1
+            border_color: 0x334155
+            radius: 8
+            shadow_width: 0
+            on_click:
+              - lambda: 'id(screen_timeout_sec) = 300;'
+            widgets:
+              - label:
+                  text: "5 MIN"
+                  text_font: font_tiny
+                  align: CENTER
+        - label:
+            id: lbl_ip
+            text: "IP --"
+            text_font: font_tiny
+            text_color: 0x64748B
+            align: BOTTOM_LEFT
+            x: 30
+            y: -30
+
+  top_layer:
+    widgets:
+      - obj:
+          id: voice_overlay
+          hidden: true
+          align: BOTTOM_MID
+          y: -96
+          width: 300
+          height: 76
+          bg_color: 0x111827
+          bg_opa: 90%
+          border_width: 1
+          border_color: 0x334155
+          radius: 8
+          pad_all: 0
+          widgets:
+            - label:
+                id: lbl_voice_status
+                text: "Ready"
+                text_font: font_small
+                text_color: 0xE5E7EB
+                align: CENTER
+                y: -12
+            - bar:
+                id: bar_listening
+                align: BOTTOM_MID
+                y: -12
+                width: 240
+                height: 8
+                value: 0
+                min_value: 0
+                max_value: 100
+                bg_color: 0x334155
+                indicator:
+                  bg_color: 0x2095F6
+                hidden: true

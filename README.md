@@ -34,13 +34,67 @@ Typical peripherals and capabilities:
   - Fan mode controls
   - Quick actions and status indicators
 
-## Getting Started
+## Using `thermostat.yaml`
 
-1. Install ESPHome and ensure your board is recognized.
-2. Create a base ESPHome config for ESP32-S3.
-3. Add display, touch controller, and LVGL configuration for the Waveshare panel.
-4. Define climate controls and bind them to your HVAC/Home Assistant entities.
-5. Tune UI performance and touch calibration.
+`thermostat.yaml` is intended to be used as an ESPHome package. It includes the
+hardware, display, touch, LVGL thermostat UI, Home Assistant climate bindings,
+wake word, and voice assistant configuration.
+
+It intentionally does **not** include `api`, `wifi`, or `ota`. Keep those in
+your own device config so credentials and deployment settings stay local.
+
+Create a parent ESPHome config, for example `my-thermostat.yaml`:
+
+```yaml
+substitutions:
+  climate_entity: climate.living_room
+  name: living-room-thermostat
+  friendly_name: Living Room Thermostat
+
+packages:
+  thermostat: github://rs/esphome-thermostat/thermostat.yaml@main
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  fast_connect: true
+  ap:
+    ssid: "${friendly_name} Fallback"
+    password: !secret fallback_ap_password
+
+captive_portal:
+```
+
+Then validate and build:
+
+```sh
+esphome config my-thermostat.yaml
+esphome compile my-thermostat.yaml
+esphome upload my-thermostat.yaml
+```
+
+Required secrets:
+
+```yaml
+api_encryption_key: ...
+wifi_ssid: ...
+wifi_password: ...
+fallback_ap_password: ...
+```
+
+Useful substitutions:
+
+- `climate_entity`: Home Assistant climate entity to control.
+- `thermostat_min_tenths` / `thermostat_max_tenths`: setpoint range in tenths of a degree, for example `50` to `300`.
+- `thermostat_step_tenths`: setpoint step in tenths of a degree, for example `5` for 0.5 degree steps.
+- `fan_mode_1` through `fan_mode_5`: fan mode service values sent to Home Assistant.
 
 ## License
 
