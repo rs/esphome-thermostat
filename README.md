@@ -1,6 +1,8 @@
-# ESPHome Thermostat UI (Waveshare ESP32-S3 Touch LCD 4)
+# ESPHome Thermostat UI (Waveshare ESP32-S3-Touch-LCD-4B)
 
-Project documentation for an **ESPHome-based thermostat UI** built on the **Waveshare ESP32-S3-Touch-LCD-4** platform.
+Project documentation for an **ESPHome-based thermostat UI** built on the
+**[Waveshare ESP32-S3-Touch-LCD-4B](https://www.waveshare.com/wiki/ESP32-S3-Touch-LCD-4B)**
+platform.
 
 ## Project Overview
 
@@ -15,8 +17,8 @@ Core goals:
 
 ## Hardware Platform
 
-Reference board:
-- Waveshare ESP32-S3-Touch-LCD-4
+Target hardware:
+- **[Waveshare ESP32-S3-Touch-LCD-4B](https://www.waveshare.com/wiki/ESP32-S3-Touch-LCD-4B)**
 
 Typical peripherals and capabilities:
 - 4-inch touch display (UI rendering + user input)
@@ -80,6 +82,13 @@ esphome compile my-thermostat.yaml
 esphome upload my-thermostat.yaml
 ```
 
+In Home Assistant, open the ESPHome integration entry for the thermostat and
+enable service/action calls for the device. The UI uses `homeassistant.action`
+to call `climate.set_temperature`, `climate.set_hvac_mode`, and
+`climate.set_fan_mode`; if service calls are disabled, the display can still
+read the climate entity but changes made on the screen will not update Home
+Assistant.
+
 Required secrets:
 
 ```yaml
@@ -92,7 +101,7 @@ fallback_ap_password: ...
 Useful substitutions:
 
 - `climate_entity`: Home Assistant climate entity to control.
-- `thermostat_min_tenths` / `thermostat_max_tenths`: setpoint range in tenths of a degree, for example `50` to `300`.
+- `thermostat_min_tenths` / `thermostat_max_tenths`: setpoint range in tenths of a degree, defaulting to `180` to `320` for 18-32 °C.
 - `thermostat_step_tenths`: setpoint step in tenths of a degree, for example `5` for 0.5 degree steps.
 - `fan_mode_1` through `fan_mode_5`: fan mode service values sent to Home Assistant.
 
