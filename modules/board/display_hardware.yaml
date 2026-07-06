@@ -51,12 +51,8 @@ touchscreen:
     address: 0x14
     update_interval: 20ms
     on_touch:
-      - if:
-          condition:
-            lambda: 'return id(switch_touchscreen).state;'
-          then:
-            - lambda: 'id(last_touch_ms) = millis();'
-            - script.execute: wake_screen
+      - lambda: 'id(last_touch_ms) = millis();'
+      - script.execute: wake_screen
 
 display:
   - platform: mipi_rgb

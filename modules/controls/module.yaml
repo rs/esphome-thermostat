@@ -18,12 +18,6 @@ number:
 
 switch:
   - platform: template
-    name: "Touchscreen"
-    id: switch_touchscreen
-    icon: mdi:gesture-tap
-    restore_mode: RESTORE_DEFAULT_ON
-    optimistic: true
-  - platform: template
     name: "Microphone"
     id: switch_microphone
     icon: mdi:microphone
