@@ -1,0 +1,93 @@
+# Waveshare ESP32-S3-Touch-LCD-4B display, touch, buses, and backlight.
+
+external_components:
+  - source: github://pr#14193
+    components: [gt911]
+    refresh: 1h
+
+i2c:
+  - id: bus_a
+    sda: GPIO47
+    scl: GPIO48
+    frequency: 100kHz
+
+pca9554:
+  - id: expander
+    i2c_id: bus_a
+    address: 0x20
+
+spi:
+  - id: display_spi
+    interface: software
+    clk_pin:
+      pca9554: expander
+      number: 2
+      id: lcd_spi_clk
+    mosi_pin:
+      pca9554: expander
+      number: 1
+      id: lcd_spi_mosi
+
+output:
+  - platform: ledc
+    pin: GPIO4
+    id: backlight_pwm
+    frequency: 5000Hz
+    inverted: true
+
+light:
+  - platform: monochromatic
+    name: "Display Backlight"
+    id: display_backlight
+    output: backlight_pwm
+    restore_mode: ALWAYS_ON
+    default_transition_length: 1s
+
+touchscreen:
+  - platform: gt911
+    id: touch_panel
+    i2c_id: bus_a
+    display: lcd_display
+    address: 0x14
+    update_interval: 20ms
+    on_touch:
+      - if:
+          condition:
+            lambda: 'return id(switch_touchscreen).state;'
+          then:
+            - lambda: 'id(last_touch_ms) = millis();'
+            - script.execute: wake_screen
+
+display:
+  - platform: mipi_rgb
+    id: lcd_display
+    model: CUSTOM
+    cs_pin:
+      pca9554: expander
+      number: 0
+      id: lcd_spi_cs
+    data_rate: 1MHz
+    data_pins:
+      blue: [40, 41, 42, 2, 1]
+      green: [21, 8, 18, 45, 38, 39]
+      red: [10, 11, 12, 13, 14]
+    de_pin: GPIO17
+    hsync_pin: GPIO46
+    vsync_pin: GPIO3
+    pclk_pin: GPIO9
+    pclk_frequency: 16MHz
+    pclk_inverted: false
+    pixel_mode: 16bit
+    dimensions:
+      width: 480
+      height: 480
+    hsync_pulse_width: 10
+    hsync_back_porch: 10
+    hsync_front_porch: 20
+    vsync_pulse_width: 10
+    vsync_back_porch: 10
+    vsync_front_porch: 10
+    invert_colors: false
+    init_sequence:
+      - [0x11]
+      - [0x29]

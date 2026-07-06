@@ -1,0 +1,38 @@
+# Home Assistant-facing controls.
+
+number:
+  - platform: template
+    name: "Volume"
+    id: number_volume
+    icon: mdi:volume-high
+    min_value: 10
+    max_value: 100
+    step: 5
+    unit_of_measurement: "%"
+    mode: slider
+    optimistic: true
+    set_action:
+      - lambda: |-
+          id(speaker_volume) = x / 100.0f;
+          id(es8311_codec).set_volume(id(speaker_volume));
+
+switch:
+  - platform: template
+    name: "Touchscreen"
+    id: switch_touchscreen
+    icon: mdi:gesture-tap
+    restore_mode: RESTORE_DEFAULT_ON
+    optimistic: true
+  - platform: template
+    name: "Microphone"
+    id: switch_microphone
+    icon: mdi:microphone
+    restore_mode: RESTORE_DEFAULT_ON
+    optimistic: true
+    on_turn_on:
+      - micro_wake_word.start:
+          id: mww
+    on_turn_off:
+      - voice_assistant.stop:
+      - micro_wake_word.stop:
+          id: mww

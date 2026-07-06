@@ -1,0 +1,71 @@
+# Home Assistant climate bindings and thermostat UI update logic.
+
+globals:
+  - id: pending_target_temperature
+    type: float
+    initial_value: '20.0'
+
+sensor:
+  - platform: homeassistant
+    id: ha_current_temperature
+    entity_id: ${climate_entity}
+    attribute: current_temperature
+    internal: true
+    on_value:
+      - script.execute: refresh_climate_ui
+  - platform: homeassistant
+    id: ha_target_temperature
+    entity_id: ${climate_entity}
+    attribute: temperature
+    internal: true
+    on_value:
+      - script.execute: refresh_climate_ui
+
+text_sensor:
+  - platform: homeassistant
+    id: ha_climate_state
+    entity_id: ${climate_entity}
+    internal: true
+    on_value:
+      - script.execute: refresh_climate_ui
+  - platform: homeassistant
+    id: ha_hvac_action
+    entity_id: ${climate_entity}
+    attribute: hvac_action
+    internal: true
+    on_value:
+      - script.execute: refresh_climate_ui
+  - platform: homeassistant
+    id: ha_fan_mode
+    entity_id: ${climate_entity}
+    attribute: fan_mode
+    internal: true
+    on_value:
+      - script.execute: refresh_climate_ui
+
+script:
+  - id: refresh_thermostat_arc
+    then:
+      - lambda: !include refresh_thermostat_arc.cpp
+  - id: refresh_climate_ui
+    then:
+      - lambda: !include refresh_climate_ui.cpp
+      - script.execute: refresh_thermostat_arc
+  - id: send_target_temperature
+    mode: restart
+    then:
+      - homeassistant.action:
+          action: climate.set_temperature
+          data:
+            entity_id: ${climate_entity}
+            temperature: !lambda |-
+              char buf[8];
+              snprintf(buf, sizeof(buf), "%.1f", id(pending_target_temperature));
+              return std::string(buf);
+          on_success:
+            - lambda: |-
+                ESP_LOGI("thermostat", "Sent target %.1f to ${climate_entity}", id(pending_target_temperature));
+          on_error:
+            - lambda: |-
+                ESP_LOGW("thermostat", "Failed to send target %.1f to ${climate_entity}: %s",
+                         id(pending_target_temperature), error.c_str());

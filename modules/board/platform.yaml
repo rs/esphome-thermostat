@@ -1,0 +1,42 @@
+# ESPHome device setup and boot actions.
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  on_boot:
+    - priority: 200
+      then:
+        - lambda: !include lcd_init.cpp
+        - delay: 300ms
+        - lambda: 'id(screen_active_brightness) = id(screen_brightness);'
+        - light.turn_on:
+            id: display_backlight
+            brightness: !lambda 'return id(screen_active_brightness);'
+        - lambda: 'id(last_screen_state_change_ms) = millis();'
+    - priority: -200
+      then:
+        - output.turn_on: speaker_amp_enable
+        - lambda: |-
+            id(last_touch_ms) = millis();
+            id(es8311_codec).set_volume(id(speaker_volume));
+            id(number_volume).publish_state(id(speaker_volume) * 100.0f);
+        - script.execute: refresh_climate_ui
+
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240: "y"
+      CONFIG_ESP32S3_DATA_CACHE_64KB: "y"
+      CONFIG_SPIRAM_FETCH_INSTRUCTIONS: "y"
+      CONFIG_SPIRAM_RODATA: "y"
+      CONFIG_COMPILER_OPTIMIZATION_PERF: "y"
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+logger:

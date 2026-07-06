@@ -1,0 +1,21 @@
+# LVGL root wiring and page/layer composition.
+
+lvgl:
+  displays:
+    - lcd_display
+  touchscreens:
+    - touchscreen_id: touch_panel
+  bottom_layer:
+    bg_color: 0x0D1117
+  text_color: 0xFFFFFF
+  on_idle:
+    - timeout: 60s
+      then:
+        - lvgl.page.show: thermostat_page
+  pages:
+    - !include pages/thermostat.yaml
+    - !include pages/mode.yaml
+    - !include pages/fan.yaml
+  top_layer:
+    widgets:
+      - !include layers/voice_overlay.yaml

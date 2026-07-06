@@ -1,0 +1,34 @@
+obj:
+  id: voice_overlay
+  hidden: true
+  align: BOTTOM_MID
+  y: -96
+  width: 300
+  height: 76
+  bg_color: 0x111827
+  bg_opa: 90%
+  border_width: 1
+  border_color: 0x334155
+  radius: 8
+  pad_all: 0
+  widgets:
+    - label:
+        id: lbl_voice_status
+        text: "Ready"
+        text_font: font_small
+        text_color: 0xE5E7EB
+        align: CENTER
+        y: -12
+    - bar:
+        id: bar_listening
+        align: BOTTOM_MID
+        y: -12
+        width: 240
+        height: 8
+        value: 0
+        min_value: 0
+        max_value: 100
+        bg_color: 0x334155
+        indicator:
+          bg_color: 0x2095F6
+        hidden: true

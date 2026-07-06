@@ -1,0 +1,56 @@
+# Screen timeout, brightness state, and wake behavior.
+
+globals:
+  - id: screen_timeout_sec
+    type: int
+    restore_value: true
+    initial_value: '60'
+  - id: screen_brightness
+    type: float
+    restore_value: true
+    initial_value: '${screen_brightness}'
+  - id: screen_active_brightness
+    type: float
+    initial_value: '${screen_brightness}'
+  - id: screen_dim_brightness
+    type: float
+    restore_value: true
+    initial_value: '${screen_dim_brightness}'
+  - id: screen_on
+    type: bool
+    initial_value: 'true'
+  - id: last_touch_ms
+    type: uint32_t
+    initial_value: '0'
+  - id: last_screen_state_change_ms
+    type: uint32_t
+    initial_value: '0'
+
+interval:
+  - interval: 10s
+    then:
+      - if:
+          condition:
+            lambda: |-
+              return id(screen_timeout_sec) != 0 && id(screen_on) &&
+                     millis() - id(last_touch_ms) > (uint32_t) id(screen_timeout_sec) * 1000UL;
+          then:
+            - lambda: 'id(screen_on) = false;'
+            - lambda: 'id(last_screen_state_change_ms) = millis();'
+            - light.turn_on:
+                id: display_backlight
+                brightness: !lambda 'return id(screen_dim_brightness);'
+
+script:
+  - id: wake_screen
+    mode: restart
+    then:
+      - if:
+          condition:
+            lambda: 'return !id(screen_on);'
+          then:
+            - lambda: 'id(screen_on) = true;'
+            - lambda: 'id(last_screen_state_change_ms) = millis();'
+            - light.turn_on:
+                id: display_backlight
+                brightness: !lambda 'return id(screen_active_brightness);'

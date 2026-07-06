@@ -1,0 +1,183 @@
+id: thermostat_page
+bg_color: 0x0D1117
+widgets:
+  - arc:
+      id: arc_thermostat
+      align: CENTER
+      y: -4
+      width: 410
+      height: 410
+      adjustable: true
+      value: ${thermostat_default_tenths}
+      min_value: ${thermostat_min_tenths}
+      max_value: ${thermostat_max_tenths}
+      arc_width: 26
+      arc_rounded: true
+      arc_color: 0x292929
+      indicator:
+        arc_color: 0xFF6F22
+        arc_width: 26
+        arc_rounded: true
+      knob:
+        bg_color: 0xFFFFFF
+        border_width: 0
+      on_value:
+        - lambda: |-
+            id(pending_target_temperature) = x / 10.0f;
+            char buf[16];
+            snprintf(buf, sizeof(buf), "%.1f°", id(pending_target_temperature));
+            lv_label_set_text(id(lbl_target_temp), buf);
+        - script.execute: refresh_thermostat_arc
+      on_release:
+        - lambda: |-
+            int rounded = ((int) lroundf(x / ${thermostat_step_tenths})) * ${thermostat_step_tenths};
+            if (rounded < ${thermostat_min_tenths}) rounded = ${thermostat_min_tenths};
+            if (rounded > ${thermostat_max_tenths}) rounded = ${thermostat_max_tenths};
+            id(pending_target_temperature) = rounded / 10.0f;
+            lv_arc_set_value(id(arc_thermostat), rounded);
+        - script.execute: send_target_temperature
+  - arc:
+      id: arc_track
+      align: CENTER
+      y: -4
+      width: 410
+      height: 410
+      adjustable: false
+      value: 100
+      min_value: 0
+      max_value: 100
+      arc_width: 26
+      arc_rounded: true
+      arc_color: 0x0D1117
+      indicator:
+        arc_color: 0x245D91
+        arc_width: 26
+        arc_rounded: true
+      knob:
+        bg_color: 0x0D1117
+        border_width: 0
+  - arc:
+      id: arc_delta
+      align: CENTER
+      y: -4
+      width: 410
+      height: 410
+      adjustable: false
+      value: 100
+      min_value: 0
+      max_value: 100
+      arc_width: 26
+      arc_rounded: true
+      arc_color: 0x0D1117
+      indicator:
+        arc_color: 0xFF7626
+        arc_width: 26
+        arc_rounded: true
+      knob:
+        bg_color: 0x0D1117
+        border_width: 0
+  - obj:
+      id: obj_current_marker
+      align: TOP_LEFT
+      x: 0
+      y: 0
+      width: 14
+      height: 14
+      radius: 7
+      bg_color: 0x6E3517
+      border_width: 0
+      pad_all: 0
+  - obj:
+      id: obj_target_marker
+      align: TOP_LEFT
+      x: 0
+      y: 0
+      width: 34
+      height: 34
+      radius: 17
+      bg_color: 0xF8FAFC
+      border_width: 0
+      pad_all: 0
+  - label:
+      id: lbl_hvac_action
+      text: "IDLE"
+      text_font: font_small
+      text_color: 0xFF6F22
+      align: CENTER
+      y: -110
+  - label:
+      id: lbl_target_temp
+      text: "20.0°"
+      text_font: font_target
+      text_color: 0xFFFFFF
+      align: CENTER
+      y: -30
+  - label:
+      text: "ROOM"
+      text_font: font_tiny
+      text_color: 0x64748B
+      align: CENTER
+      y: 56
+  - label:
+      id: lbl_current_temp
+      text: "--.-°"
+      text_font: font_medium
+      text_color: 0xFF6F22
+      align: CENTER
+      y: 88
+  - button:
+      id: btn_mode_chip
+      align: BOTTOM_MID
+      x: -78
+      y: -36
+      width: 138
+      height: 44
+      bg_color: 0x111827
+      border_width: 1
+      border_color: 0x475569
+      radius: 6
+      shadow_width: 0
+      on_click:
+        - lvgl.page.show:
+            id: mode_page
+            animation: MOVE_LEFT
+            time: 200ms
+      widgets:
+        - label:
+            id: lbl_mode_chip
+            text: "\U000F1796"
+            text_font: font_icon
+            text_color: 0xF8FAFC
+            align: CENTER
+  - button:
+      id: btn_fan_chip
+      align: BOTTOM_MID
+      x: 78
+      y: -36
+      width: 138
+      height: 44
+      bg_color: 0x111827
+      border_width: 1
+      border_color: 0x475569
+      radius: 6
+      shadow_width: 0
+      on_click:
+        - lvgl.page.show:
+            id: fan_page
+            animation: MOVE_LEFT
+            time: 200ms
+      widgets:
+        - label:
+            id: lbl_fan_icon
+            text: "\U000F0210"
+            text_font: font_icon
+            text_color: 0xF8FAFC
+            align: CENTER
+            x: -38
+        - label:
+            id: lbl_fan_chip
+            text: "--"
+            text_font: font_small
+            text_color: 0xF8FAFC
+            align: CENTER
+            x: 20

@@ -45,6 +45,23 @@ wake word, and voice assistant configuration.
 It intentionally does **not** include `api`, `wifi`, or `ota`. Keep those in
 your own device config so credentials and deployment settings stay local.
 
+The reusable config is split into focused module directories. Each standard
+module uses `module.yaml` as its entrypoint, with any related C++ lambda files
+kept beside it.
+
+- `thermostat.yaml`: public entrypoint, substitutions, and package wiring.
+- `modules/board/`: Waveshare board platform, buses, display/touch hardware, audio hardware, and physical buttons.
+- `modules/base/`: optional sensors from the base PCB.
+- `modules/screen/`: screen timeout, brightness state, and wake behavior.
+- `modules/climate/`: Home Assistant climate sensors/actions and thermostat UI update lambdas.
+- `modules/voice/`: wake word and voice assistant behavior.
+- `modules/controls/`: Home Assistant-facing touchscreen, microphone, and volume controls.
+- `modules/ui/`: fonts, LVGL root config, page fragments, and voice overlay layer.
+
+The lambda files begin with `|-` because ESPHome parses `!include` targets as
+YAML. The rest of each file is the C++ lambda body, which keeps the thermostat
+logic readable while still working when the package is imported from GitHub.
+
 Create a parent ESPHome config, for example `my-thermostat.yaml`:
 
 ```yaml
@@ -52,8 +69,8 @@ substitutions:
   climate_entity: climate.living_room
   name: living-room-thermostat
   friendly_name: Living Room Thermostat
-  board_light_sensor: none
-  board_thermometer: none
+  base_light_sensor: none
+  base_thermometer: none
 
 packages:
   thermostat: github://rs/esphome-thermostat/thermostat.yaml@main
@@ -106,10 +123,15 @@ Useful substitutions:
 - `thermostat_min_tenths` / `thermostat_max_tenths`: setpoint range in tenths of a degree, defaulting to `180` to `320` for 18-32 °C.
 - `thermostat_step_tenths`: setpoint step in tenths of a degree, for example `5` for 0.5 degree steps.
 - `fan_mode_1` through `fan_mode_5`: fan mode service values sent to Home Assistant.
-- `board_light_sensor`: set to `present` when the optional base PCB has the VEML7700 light sensor populated; leave as `none` otherwise.
-- `board_thermometer`: set to `present` when the optional base PCB has the SHT45 temperature/humidity sensor populated; leave as `none` otherwise.
+- `base_light_sensor`: set to `present` when the optional base PCB has the VEML7700 light sensor populated; leave as `none` otherwise.
+- `base_thermometer`: set to `present` when the optional base PCB has the SHT45 temperature/humidity sensor populated; leave as `none` otherwise.
+- `base_light_sensor_id` / `base_light_sensor_name`: ESPHome ID and Home Assistant name for the VEML7700 ambient light reading.
+- `base_light_sensor_internal`: keep the VEML7700 ambient light reading internal by default; set to `false` to expose it to Home Assistant.
+- `base_thermometer_id`: ESPHome ID for the SHT45 component.
+- `base_temperature_sensor_id` / `base_temperature_sensor_name`: ESPHome ID and Home Assistant name for the SHT45 temperature reading.
+- `base_humidity_sensor_id` / `base_humidity_sensor_name`: ESPHome ID and Home Assistant name for the SHT45 humidity reading.
 
-When `board_light_sensor` is `present`, the VEML7700 reading is used locally to
+When `base_light_sensor` is `present`, the VEML7700 reading is used locally to
 adjust the fully lit screen brightness and to wake the dimmed display when a
 fast ambient-light change is detected. The light sensor is kept internal to
 ESPHome by default. These substitutions tune that behavior:
@@ -120,10 +142,10 @@ ESPHome by default. These substitutions tune that behavior:
 - `light_sensor_presence_delta_ratio`: relative lux jump that can wake the screen, default `0.35`.
 - `light_sensor_presence_ignore_after_screen_ms`: debounce after screen state changes, default `3000`.
 
-When `board_thermometer` is `present`, the SHT45 is exposed to Home Assistant
-as `Board Temperature` and `Board Humidity`. The thermostat UI does not consume
+When `base_thermometer` is `present`, the SHT45 is exposed to Home Assistant
+as `Base Temperature` and `Base Humidity` by default. The thermostat UI does not consume
 these readings directly; configure your Home Assistant climate entity separately
-if you want to use `Board Temperature` as the room temperature source.
+if you want to use `Base Temperature` as the room temperature source.
 
 ## License
 

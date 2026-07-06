@@ -1,0 +1,5 @@
+# LVGL UI module.
+
+packages:
+  fonts: !include fonts.yaml
+  lvgl: !include lvgl.yaml

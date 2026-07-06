@@ -1,0 +1,5 @@
+# Optional base PCB sensors.
+
+packages:
+  light_sensor: !include "light_${base_light_sensor}.yaml"
+  thermometer: !include "thermometer_${base_thermometer}.yaml"

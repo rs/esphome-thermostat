@@ -1,0 +1,7 @@
+# Waveshare ESP32-S3-Touch-LCD-4B board wiring and hardware setup.
+
+packages:
+  platform: !include platform.yaml
+  display_hardware: !include display_hardware.yaml
+  audio_hardware: !include audio_hardware.yaml
+  physical_buttons: !include physical_buttons.yaml

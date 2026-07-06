@@ -1,0 +1,14 @@
+sensor:
+  - platform: sht4x
+    id: ${base_thermometer_id}
+    i2c_id: bus_a
+    address: 0x44
+    update_interval: 30s
+    precision: High
+    heater_max_duty: 0.0
+    temperature:
+      id: ${base_temperature_sensor_id}
+      name: ${base_temperature_sensor_name}
+    humidity:
+      id: ${base_humidity_sensor_id}
+      name: ${base_humidity_sensor_name}

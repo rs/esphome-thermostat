@@ -1,0 +1,28 @@
+# Fonts used by the LVGL UI.
+
+font:
+  - file: "gfonts://Montserrat"
+    id: font_tiny
+    size: 16
+    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .:-_/%+°"
+  - file: "gfonts://Montserrat"
+    id: font_small
+    size: 20
+    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .:-_/%+°"
+  - file: "gfonts://Montserrat"
+    id: font_medium
+    size: 28
+    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .:-_/%+°"
+  - file: "https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/fonts/materialdesignicons-webfont.ttf"
+    id: font_icon
+    size: 28
+    glyphs:
+      - "\U000F0210"
+      - "\U000F0425"
+      - "\U000F0599"
+      - "\U000F0717"
+      - "\U000F1796"
+  - file: "gfonts://Montserrat"
+    id: font_target
+    size: 78
+    glyphs: "0123456789.-°"

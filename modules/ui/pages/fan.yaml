@@ -1,0 +1,162 @@
+id: fan_page
+bg_color: 0x0D1117
+widgets:
+  - button:
+      align: TOP_LEFT
+      x: 18
+      y: 18
+      width: 72
+      height: 38
+      bg_color: 0x111827
+      border_width: 1
+      border_color: 0x334155
+      radius: 8
+      shadow_width: 0
+      on_click:
+        - lvgl.page.show:
+            id: thermostat_page
+            animation: MOVE_RIGHT
+            time: 200ms
+      widgets:
+        - label:
+            text: "BACK"
+            text_font: font_tiny
+            align: CENTER
+  - label:
+      text: "FAN"
+      text_font: font_medium
+      text_color: 0xE5E7EB
+      align: TOP_MID
+      y: 22
+  - label:
+      id: lbl_fan_value
+      text: "--"
+      text_font: font_small
+      text_color: 0x94A3B8
+      align: TOP_MID
+      y: 62
+  - button:
+      id: btn_fan_1
+      checkable: true
+      align: TOP_MID
+      y: 110
+      width: 280
+      height: 52
+      bg_color: 0x111827
+      checked:
+        bg_color: 0x2095F6
+      border_width: 1
+      border_color: 0x334155
+      radius: 8
+      shadow_width: 0
+      on_click:
+        - homeassistant.action:
+            action: climate.set_fan_mode
+            data:
+              entity_id: ${climate_entity}
+              fan_mode: ${fan_mode_1}
+      widgets:
+        - label:
+            text: "AUTO"
+            text_font: font_small
+            align: CENTER
+  - button:
+      id: btn_fan_2
+      checkable: true
+      align: TOP_MID
+      y: 172
+      width: 280
+      height: 52
+      bg_color: 0x111827
+      checked:
+        bg_color: 0x2095F6
+      border_width: 1
+      border_color: 0x334155
+      radius: 8
+      shadow_width: 0
+      on_click:
+        - homeassistant.action:
+            action: climate.set_fan_mode
+            data:
+              entity_id: ${climate_entity}
+              fan_mode: ${fan_mode_2}
+      widgets:
+        - label:
+            text: "LOW"
+            text_font: font_small
+            align: CENTER
+  - button:
+      id: btn_fan_3
+      checkable: true
+      align: TOP_MID
+      y: 234
+      width: 280
+      height: 52
+      bg_color: 0x111827
+      checked:
+        bg_color: 0x2095F6
+      border_width: 1
+      border_color: 0x334155
+      radius: 8
+      shadow_width: 0
+      on_click:
+        - homeassistant.action:
+            action: climate.set_fan_mode
+            data:
+              entity_id: ${climate_entity}
+              fan_mode: ${fan_mode_3}
+      widgets:
+        - label:
+            text: "MEDIUM"
+            text_font: font_small
+            align: CENTER
+  - button:
+      id: btn_fan_4
+      checkable: true
+      align: TOP_MID
+      y: 296
+      width: 280
+      height: 52
+      bg_color: 0x111827
+      checked:
+        bg_color: 0x2095F6
+      border_width: 1
+      border_color: 0x334155
+      radius: 8
+      shadow_width: 0
+      on_click:
+        - homeassistant.action:
+            action: climate.set_fan_mode
+            data:
+              entity_id: ${climate_entity}
+              fan_mode: ${fan_mode_4}
+      widgets:
+        - label:
+            text: "HIGH"
+            text_font: font_small
+            align: CENTER
+  - button:
+      id: btn_fan_5
+      checkable: true
+      align: TOP_MID
+      y: 358
+      width: 280
+      height: 52
+      bg_color: 0x111827
+      checked:
+        bg_color: 0x2095F6
+      border_width: 1
+      border_color: 0x334155
+      radius: 8
+      shadow_width: 0
+      on_click:
+        - homeassistant.action:
+            action: climate.set_fan_mode
+            data:
+              entity_id: ${climate_entity}
+              fan_mode: ${fan_mode_5}
+      widgets:
+        - label:
+            text: "ON"
+            text_font: font_small
+            align: CENTER

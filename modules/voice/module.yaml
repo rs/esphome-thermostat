@@ -1,0 +1,135 @@
+# Wake word and Home Assistant voice assistant behavior.
+
+globals:
+  - id: is_listening
+    type: bool
+    initial_value: 'false'
+  - id: anim_val
+    type: int
+    initial_value: '0'
+  - id: anim_dir
+    type: int
+    initial_value: '1'
+
+interval:
+  - interval: 100ms
+    then:
+      - if:
+          condition:
+            lambda: 'return id(is_listening);'
+          then:
+            - lambda: |-
+                id(anim_val) += id(anim_dir) * 10;
+                if (id(anim_val) >= 100) { id(anim_val) = 100; id(anim_dir) = -1; }
+                if (id(anim_val) <= 0) { id(anim_val) = 0; id(anim_dir) = 1; }
+                lv_bar_set_value(id(bar_listening), id(anim_val), LV_ANIM_OFF);
+
+micro_wake_word:
+  id: mww
+  models:
+    - model: okay_nabu
+      probability_cutoff: 0.5
+    - model: hey_jarvis
+      probability_cutoff: 0.5
+  on_wake_word_detected:
+    - lambda: |-
+        id(last_touch_ms) = millis();
+    - script.execute: wake_screen
+    - lambda: |-
+        id(is_listening) = true;
+        lv_obj_clear_flag(id(voice_overlay), LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(id(bar_listening), LV_OBJ_FLAG_HIDDEN);
+    - lvgl.label.update:
+        id: lbl_voice_status
+        text: "Wake word"
+    - voice_assistant.start:
+        wake_word: !lambda return wake_word;
+
+voice_assistant:
+  id: va
+  microphone: board_mic
+  speaker: board_speaker
+  micro_wake_word: mww
+  noise_suppression_level: 2
+  auto_gain: 31dBFS
+  volume_multiplier: 4.0
+  on_client_connected:
+    - lvgl.label.update:
+        id: lbl_voice_status
+        text: "Ready"
+    - if:
+        condition:
+          lambda: 'return id(switch_microphone).state;'
+        then:
+          - micro_wake_word.start:
+              id: mww
+  on_client_disconnected:
+    - lvgl.label.update:
+        id: lbl_voice_status
+        text: "Disconnected"
+    - micro_wake_word.stop:
+        id: mww
+    - voice_assistant.stop:
+  on_listening:
+    - lambda: |-
+        id(is_listening) = true;
+        lv_obj_clear_flag(id(voice_overlay), LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(id(bar_listening), LV_OBJ_FLAG_HIDDEN);
+    - lvgl.label.update:
+        id: lbl_voice_status
+        text: "Listening"
+  on_tts_stream_start:
+    - lambda: |-
+        id(is_listening) = false;
+        lv_obj_clear_flag(id(voice_overlay), LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(id(bar_listening), LV_OBJ_FLAG_HIDDEN);
+        id(es8311_codec).set_volume(id(speaker_volume));
+    - lvgl.label.update:
+        id: lbl_voice_status
+        text: "Answering"
+    - micro_wake_word.stop:
+        id: mww
+    - audio_dac.mute_off:
+        id: es8311_codec
+  on_tts_stream_end:
+    - lvgl.label.update:
+        id: lbl_voice_status
+        text: "Ready"
+  on_end:
+    - lambda: |-
+        id(is_listening) = false;
+        lv_obj_add_flag(id(bar_listening), LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(id(voice_overlay), LV_OBJ_FLAG_HIDDEN);
+    - if:
+        condition:
+          lambda: 'return id(switch_microphone).state;'
+        then:
+          - micro_wake_word.start:
+              id: mww
+  on_idle:
+    - lambda: |-
+        id(is_listening) = false;
+        lv_obj_add_flag(id(bar_listening), LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(id(voice_overlay), LV_OBJ_FLAG_HIDDEN);
+    - if:
+        condition:
+          lambda: 'return id(switch_microphone).state;'
+        then:
+          - micro_wake_word.start:
+              id: mww
+  on_error:
+    - lambda: |-
+        id(is_listening) = false;
+        lv_obj_clear_flag(id(voice_overlay), LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(id(bar_listening), LV_OBJ_FLAG_HIDDEN);
+    - lvgl.label.update:
+        id: lbl_voice_status
+        text: "Voice error"
+    - delay: 1500ms
+    - lambda: 'lv_obj_add_flag(id(voice_overlay), LV_OBJ_FLAG_HIDDEN);'
+    - if:
+        condition:
+          lambda: 'return id(switch_microphone).state;'
+        then:
+          - micro_wake_word.start:
+              id: mww

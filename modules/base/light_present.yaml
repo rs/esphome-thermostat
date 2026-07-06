@@ -1,0 +1,21 @@
+globals:
+  - id: ambient_light_previous_lux
+    type: float
+    initial_value: '-1.0'
+  - id: ambient_light_last_brightness
+    type: float
+    initial_value: '-1.0'
+
+sensor:
+  - platform: veml7700
+    id: base_light_sensor_component
+    i2c_id: bus_a
+    address: 0x10
+    update_interval: 1s
+    auto_mode: true
+    ambient_light:
+      id: ${base_light_sensor_id}
+      name: ${base_light_sensor_name}
+      internal: ${base_light_sensor_internal}
+      on_value:
+        - lambda: !include ambient_light_on_value.cpp

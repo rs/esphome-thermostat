@@ -1,0 +1,57 @@
+# Board audio codecs, microphone, speaker, amp enable, and volume state.
+
+globals:
+  - id: speaker_volume
+    type: float
+    restore_value: true
+    initial_value: '0.7'
+
+output:
+  - platform: gpio
+    id: speaker_amp_enable
+    pin:
+      pca9554: expander
+      number: 3
+      mode:
+        output: true
+
+i2s_audio:
+  - id: i2s_bus
+    i2s_lrclk_pin: GPIO7
+    i2s_bclk_pin: GPIO16
+    i2s_mclk_pin: GPIO5
+
+audio_dac:
+  - platform: es8311
+    id: es8311_codec
+    i2c_id: bus_a
+    address: 0x18
+    bits_per_sample: 16bit
+    sample_rate: 16000
+    use_mclk: true
+
+audio_adc:
+  - platform: es7210
+    id: es7210_codec
+    i2c_id: bus_a
+    address: 0x40
+    bits_per_sample: 16bit
+    sample_rate: 16000
+    mic_gain: 33db
+
+microphone:
+  - platform: i2s_audio
+    id: board_mic
+    i2s_audio_id: i2s_bus
+    i2s_din_pin: GPIO15
+    adc_type: external
+    pdm: false
+    channel: left
+
+speaker:
+  - platform: i2s_audio
+    id: board_speaker
+    i2s_audio_id: i2s_bus
+    i2s_dout_pin: GPIO6
+    dac_type: external
+    channel: mono
