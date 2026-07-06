@@ -55,3 +55,22 @@ speaker:
     i2s_dout_pin: GPIO6
     dac_type: external
     channel: mono
+
+script:
+  - id: enable_speaker_playback
+    mode: restart
+    then:
+      - script.stop: disable_speaker_playback
+      - lambda: 'id(es8311_codec).set_volume(id(speaker_volume));'
+      - audio_dac.mute_off:
+          id: es8311_codec
+      - delay: 30ms
+      - output.turn_on: speaker_amp_enable
+  - id: disable_speaker_playback
+    mode: restart
+    then:
+      - script.stop: enable_speaker_playback
+      - output.turn_off: speaker_amp_enable
+      - delay: 30ms
+      - audio_dac.mute_on:
+          id: es8311_codec

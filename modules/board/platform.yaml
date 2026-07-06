@@ -15,7 +15,9 @@ esphome:
         - lambda: 'id(last_screen_state_change_ms) = millis();'
     - priority: -200
       then:
-        - output.turn_on: speaker_amp_enable
+        - output.turn_off: speaker_amp_enable
+        - audio_dac.mute_on:
+            id: es8311_codec
         - lambda: |-
             id(last_touch_ms) = millis();
             id(es8311_codec).set_volume(id(speaker_volume));

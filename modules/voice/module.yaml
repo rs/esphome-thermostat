@@ -64,6 +64,7 @@ voice_assistant:
           - micro_wake_word.start:
               id: mww
   on_client_disconnected:
+    - script.execute: disable_speaker_playback
     - lvgl.label.update:
         id: lbl_voice_status
         text: "Disconnected"
@@ -78,24 +79,25 @@ voice_assistant:
     - lvgl.label.update:
         id: lbl_voice_status
         text: "Listening"
+  on_tts_start:
+    - script.execute: enable_speaker_playback
   on_tts_stream_start:
     - lambda: |-
         id(is_listening) = false;
         lv_obj_clear_flag(id(voice_overlay), LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(id(bar_listening), LV_OBJ_FLAG_HIDDEN);
-        id(es8311_codec).set_volume(id(speaker_volume));
     - lvgl.label.update:
         id: lbl_voice_status
         text: "Answering"
     - micro_wake_word.stop:
         id: mww
-    - audio_dac.mute_off:
-        id: es8311_codec
   on_tts_stream_end:
+    - script.execute: disable_speaker_playback
     - lvgl.label.update:
         id: lbl_voice_status
         text: "Ready"
   on_end:
+    - script.execute: disable_speaker_playback
     - lambda: |-
         id(is_listening) = false;
         lv_obj_add_flag(id(bar_listening), LV_OBJ_FLAG_HIDDEN);
@@ -107,6 +109,7 @@ voice_assistant:
           - micro_wake_word.start:
               id: mww
   on_idle:
+    - script.execute: disable_speaker_playback
     - lambda: |-
         id(is_listening) = false;
         lv_obj_add_flag(id(bar_listening), LV_OBJ_FLAG_HIDDEN);
@@ -118,6 +121,7 @@ voice_assistant:
           - micro_wake_word.start:
               id: mww
   on_error:
+    - script.execute: disable_speaker_playback
     - lambda: |-
         id(is_listening) = false;
         lv_obj_clear_flag(id(voice_overlay), LV_OBJ_FLAG_HIDDEN);

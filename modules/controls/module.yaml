@@ -33,6 +33,7 @@ switch:
       - micro_wake_word.start:
           id: mww
     on_turn_off:
+      - script.execute: disable_speaker_playback
       - voice_assistant.stop:
       - micro_wake_word.stop:
           id: mww
