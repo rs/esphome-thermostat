@@ -11,6 +11,13 @@
     }
     return s.empty() ? "\U000F0210" : "\U000F146F";
   };
+  auto is_numeric = [](const std::string &s) {
+    if (s.empty()) return false;
+    for (const char c : s) {
+      if (c < '0' || c > '9') return false;
+    }
+    return true;
+  };
 
   std::string value;
   switch (x) {
@@ -29,5 +36,5 @@
     id(optimistic_fan_mode) = value;
     id(optimistic_fan_mode_until_ms) = millis() + 8000;
     lv_label_set_text(id(lbl_fan_dropdown_icon), fan_icon(value));
-    lv_label_set_text(id(lbl_fan_dropdown_text), text.c_str());
+    lv_label_set_text(id(lbl_fan_dropdown_text), is_numeric(value) ? "MANUAL" : text.c_str());
   }

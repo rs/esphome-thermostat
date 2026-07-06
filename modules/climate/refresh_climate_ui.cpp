@@ -63,6 +63,10 @@
     if (is_numeric(s)) return std::string("SPEED ") + s;
     return upper(s);
   };
+  auto fan_button_name = [&](const std::string &s) {
+    if (is_numeric(s)) return std::string("MANUAL");
+    return fan_name(s);
+  };
   auto fan_icon = [&](const std::string &s) -> const char * {
     if (s == "off") return "\U000F081D";
     if (s == "auto") return "\U000F171D";
@@ -73,6 +77,15 @@
     // MDI 7.4.47 has fan-plus, but not fan-speed-plus.
     if (is_numeric(s)) return "\U000F146F";
     return "\U000F0210";
+  };
+  auto set_dropdown_ready = [](lv_obj_t *obj, bool ready) {
+    if (ready) {
+      lv_obj_remove_state(obj, LV_STATE_DISABLED);
+      lv_obj_add_flag(obj, LV_OBJ_FLAG_CLICKABLE);
+    } else {
+      lv_obj_add_state(obj, LV_STATE_DISABLED);
+      lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICKABLE);
+    }
   };
 
   const float current = id(ha_current_temperature).state;
@@ -119,10 +132,7 @@
                                  fan_modes == "unknown" ||
                                  fan_modes == "unavailable");
   auto supports_mode = [&](const std::string &s) {
-    if (!hvac_modes_known) {
-      return s == "off" || s == "heat" || s == "cool" || s == "heat_cool" || s == "auto";
-    }
-    return token_contains(hvac_modes, s);
+    return hvac_modes_known && token_contains(hvac_modes, s);
   };
   const bool supports_auto = supports_mode("heat_cool") || supports_mode("auto");
 
@@ -165,6 +175,7 @@
 
   id(dd_mode).set_options(mode_options);
   id(dd_mode).set_selected_index(mode_selected, LV_ANIM_OFF);
+  set_dropdown_ready(id(dd_mode).obj, hvac_modes_known);
   lv_dropdown_set_text(id(dd_mode).obj, "");
   lv_label_set_text(id(lbl_mode_dropdown_icon), mode_icon(display_mode));
   lv_label_set_text(id(lbl_mode_dropdown_text), mode_options[mode_selected].c_str());
@@ -203,15 +214,7 @@
       if (pos > start) add_fan_mode(text.substr(start, pos - start));
     }
   };
-  if (fan_modes_known) {
-    collect_modes(fan_modes);
-  } else {
-    add_fan_mode("${fan_mode_1}");
-    add_fan_mode("${fan_mode_2}");
-    add_fan_mode("${fan_mode_3}");
-    add_fan_mode("${fan_mode_4}");
-    add_fan_mode("${fan_mode_5}");
-  }
+  if (fan_modes_known) collect_modes(fan_modes);
   add_fan_mode(fan);
 
   id(fan_mode_slot_1) = fan_slots[0];
@@ -233,6 +236,7 @@
 
   id(dd_fan).set_options(fan_options);
   id(dd_fan).set_selected_index(fan_selected, LV_ANIM_OFF);
+  set_dropdown_ready(id(dd_fan).obj, fan_modes_known && fan_count > 0);
   lv_dropdown_set_text(id(dd_fan).obj, "");
   lv_label_set_text(id(lbl_fan_dropdown_icon), fan_icon(fan));
-  lv_label_set_text(id(lbl_fan_dropdown_text), fan_options[fan_selected].c_str());
+  lv_label_set_text(id(lbl_fan_dropdown_text), fan_button_name(fan).c_str());
