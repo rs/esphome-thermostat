@@ -13,7 +13,7 @@ lvgl:
       then:
         - lvgl.page.show: thermostat_page
   pages:
-    - !include pages/thermostat.yaml
+    - !include pages/thermostat/thermostat.yaml
   top_layer:
     widgets:
       - !include layers/wifi_status.yaml

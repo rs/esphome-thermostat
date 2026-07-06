@@ -1,0 +1,115 @@
+dropdown:
+  id: dd_mode
+  align: BOTTOM_MID
+  x: -78
+  y: -36
+  width: 138
+  height: 44
+  options:
+    - AUTO
+  selected_text: AUTO
+  dir: TOP
+  bg_color: 0x111827
+  text_font: font_small
+  text_color: 0x111827
+  border_width: 1
+  border_color: 0x475569
+  pad_left: 0
+  pad_right: 0
+  radius: 6
+  shadow_width: 0
+  dropdown_list:
+    bg_color: 0x111827
+    text_font: font_small
+    text_color: 0xF8FAFC
+    border_width: 1
+    border_color: 0x475569
+    radius: 6
+    selected:
+      bg_color: 0x2095F6
+      text_color: 0xFFFFFF
+  widgets:
+    - label:
+        id: lbl_mode_dropdown_icon
+        text: "\U000F1796"
+        text_font: font_icon
+        text_color: 0xF8FAFC
+        align: TOP_LEFT
+        x: 14
+        y: -4
+    - label:
+        id: lbl_mode_dropdown_text
+        text: "AUTO"
+        text_font: font_small
+        text_color: 0xF8FAFC
+        align: TOP_LEFT
+        x: 48
+        y: 0
+  on_value:
+    - lambda: !include ../../../../climate/set_optimistic_hvac_mode.cpp
+    - script.execute: refresh_thermostat_arc
+    - script.execute: expire_optimistic_climate_ui
+    - if:
+        condition:
+          lambda: return text == "OFF";
+        then:
+          - homeassistant.action:
+              action: climate.set_hvac_mode
+              data:
+                entity_id: ${climate_entity}
+                hvac_mode: "off"
+    - if:
+        condition:
+          lambda: return text == "HEAT";
+        then:
+          - homeassistant.action:
+              action: climate.set_hvac_mode
+              data:
+                entity_id: ${climate_entity}
+                hvac_mode: heat
+    - if:
+        condition:
+          lambda: return text == "COOL";
+        then:
+          - homeassistant.action:
+              action: climate.set_hvac_mode
+              data:
+                entity_id: ${climate_entity}
+                hvac_mode: cool
+    - if:
+        condition:
+          lambda: return text == "AUTO";
+        then:
+          - if:
+              condition:
+                lambda: !include ../../../../climate/should_send_auto_hvac_mode.cpp
+              then:
+                - homeassistant.action:
+                    action: climate.set_hvac_mode
+                    data:
+                      entity_id: ${climate_entity}
+                      hvac_mode: auto
+              else:
+                - homeassistant.action:
+                    action: climate.set_hvac_mode
+                    data:
+                      entity_id: ${climate_entity}
+                      hvac_mode: heat_cool
+    - if:
+        condition:
+          lambda: return text == "DRY";
+        then:
+          - homeassistant.action:
+              action: climate.set_hvac_mode
+              data:
+                entity_id: ${climate_entity}
+                hvac_mode: dry
+    - if:
+        condition:
+          lambda: return text == "FAN";
+        then:
+          - homeassistant.action:
+              action: climate.set_hvac_mode
+              data:
+                entity_id: ${climate_entity}
+                hvac_mode: fan_only

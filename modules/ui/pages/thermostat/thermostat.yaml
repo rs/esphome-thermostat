@@ -1,0 +1,6 @@
+id: thermostat_page
+bg_color: 0x0D1117
+widgets:
+  - !include widgets/arc_slider.yaml
+  - !include widgets/mode_dropdown.yaml
+  - !include widgets/fan_dropdown.yaml

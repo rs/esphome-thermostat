@@ -1,0 +1,132 @@
+obj:
+  id: obj_arc_slider
+  align: CENTER
+  width: 480
+  height: 480
+  bg_opa: TRANSP
+  border_width: 0
+  pad_all: 0
+  widgets:
+    - arc:
+        id: arc_thermostat
+        align: CENTER
+        y: -4
+        width: 410
+        height: 410
+        adjustable: true
+        value: ${thermostat_default_tenths}
+        min_value: ${thermostat_min_tenths}
+        max_value: ${thermostat_max_tenths}
+        arc_width: 26
+        arc_rounded: true
+        arc_color: 0x292929
+        indicator:
+          arc_color: 0xFF6F22
+          arc_width: 26
+          arc_rounded: true
+        knob:
+          bg_color: 0xFFFFFF
+          border_width: 0
+        on_value:
+          - if:
+              condition:
+                lambda: return (int32_t) (millis() - id(dropdown_arc_guard_until_ms)) >= 0;
+              then:
+                - lambda: |-
+                    id(pending_target_temperature) = x / 10.0f;
+                    id(optimistic_target_temperature_until_ms) = millis() + 8000;
+                    char buf[16];
+                    snprintf(buf, sizeof(buf), "%.1f°", id(pending_target_temperature));
+                    lv_label_set_text(id(lbl_target_temp), buf);
+                - script.execute: refresh_thermostat_arc
+        on_release:
+          - if:
+              condition:
+                lambda: return (int32_t) (millis() - id(dropdown_arc_guard_until_ms)) >= 0;
+              then:
+                - lambda: !include ../../../../climate/set_optimistic_target_temperature.cpp
+                - script.execute: refresh_thermostat_arc
+                - script.execute: send_target_temperature
+                - script.execute: expire_optimistic_climate_ui
+    - arc:
+        id: arc_track
+        align: CENTER
+        y: -4
+        width: 410
+        height: 410
+        adjustable: false
+        value: 100
+        min_value: 0
+        max_value: 100
+        arc_width: 26
+        arc_rounded: true
+        arc_color: 0x0D1117
+        indicator:
+          arc_color: 0x245D91
+          arc_width: 26
+          arc_rounded: true
+        knob:
+          bg_color: 0x0D1117
+          border_width: 0
+    - arc:
+        id: arc_delta
+        align: CENTER
+        y: -4
+        width: 410
+        height: 410
+        adjustable: false
+        value: 100
+        min_value: 0
+        max_value: 100
+        arc_width: 26
+        arc_rounded: true
+        arc_color: 0x0D1117
+        indicator:
+          arc_color: 0xFF7626
+          arc_width: 26
+          arc_rounded: true
+        knob:
+          bg_color: 0x0D1117
+          border_width: 0
+    - obj:
+        id: obj_current_marker
+        align: TOP_LEFT
+        x: 0
+        y: 0
+        width: 14
+        height: 14
+        radius: 7
+        bg_color: 0x6E3517
+        border_width: 0
+        pad_all: 0
+    - obj:
+        id: obj_target_marker
+        align: TOP_LEFT
+        x: 0
+        y: 0
+        width: 34
+        height: 34
+        radius: 17
+        bg_color: 0xF8FAFC
+        border_width: 0
+        pad_all: 0
+    - label:
+        id: lbl_target_temp
+        text: "20.0°"
+        text_font: font_target
+        text_color: 0xFFFFFF
+        align: CENTER
+        y: -30
+    - label:
+        text: "ROOM"
+        text_font: font_tiny
+        text_color: 0x64748B
+        align: CENTER
+        y: 56
+    - label:
+        id: lbl_current_temp
+        text: "--.-°"
+        text_font: font_medium
+        text_color: 0xFF6F22
+        align: CENTER
+        y: 88

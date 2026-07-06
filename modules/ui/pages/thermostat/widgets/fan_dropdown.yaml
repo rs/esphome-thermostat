@@ -1,0 +1,84 @@
+dropdown:
+  id: dd_fan
+  align: BOTTOM_MID
+  x: 78
+  y: -36
+  width: 138
+  height: 44
+  options:
+    - AUTO
+  selected_text: AUTO
+  dir: TOP
+  bg_color: 0x111827
+  text_font: font_small
+  text_color: 0x111827
+  border_width: 1
+  border_color: 0x475569
+  pad_left: 0
+  pad_right: 0
+  radius: 6
+  shadow_width: 0
+  dropdown_list:
+    bg_color: 0x111827
+    text_font: font_small
+    text_color: 0xF8FAFC
+    border_width: 1
+    border_color: 0x475569
+    radius: 6
+    selected:
+      bg_color: 0x2095F6
+      text_color: 0xFFFFFF
+  widgets:
+    - label:
+        id: lbl_fan_dropdown_icon
+        text: "\U000F0210"
+        text_font: font_icon
+        text_color: 0xF8FAFC
+        align: TOP_LEFT
+        x: 14
+        y: -4
+    - label:
+        id: lbl_fan_dropdown_text
+        text: "AUTO"
+        text_font: font_small
+        text_color: 0xF8FAFC
+        align: TOP_LEFT
+        x: 48
+        y: 0
+  on_value:
+    - lambda: !include ../../../../climate/set_optimistic_fan_mode.cpp
+    - script.execute: expire_optimistic_climate_ui
+    - if:
+        condition:
+          lambda: |-
+            if (text == "--") return false;
+            std::string value;
+            switch (x) {
+              case 0: value = id(fan_mode_slot_1); break;
+              case 1: value = id(fan_mode_slot_2); break;
+              case 2: value = id(fan_mode_slot_3); break;
+              case 3: value = id(fan_mode_slot_4); break;
+              case 4: value = id(fan_mode_slot_5); break;
+              case 5: value = id(fan_mode_slot_6); break;
+              case 6: value = id(fan_mode_slot_7); break;
+              case 7: value = id(fan_mode_slot_8); break;
+              default: return false;
+            }
+            return !value.empty() && value != "unknown" && value != "unavailable";
+        then:
+          - homeassistant.action:
+              action: climate.set_fan_mode
+              data:
+                entity_id: ${climate_entity}
+                fan_mode: !lambda |-
+                  switch (x) {
+                    case 0: return id(fan_mode_slot_1);
+                    case 1: return id(fan_mode_slot_2);
+                    case 2: return id(fan_mode_slot_3);
+                    case 3: return id(fan_mode_slot_4);
+                    case 4: return id(fan_mode_slot_5);
+                    case 5: return id(fan_mode_slot_6);
+                    case 6: return id(fan_mode_slot_7);
+                    case 7: return id(fan_mode_slot_8);
+                    default: return std::string("");
+                  }
