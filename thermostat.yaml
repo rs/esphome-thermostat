@@ -15,6 +15,18 @@ substitutions:
   fan_mode_5: "on"
   screen_brightness: "0.90"
   screen_dim_brightness: "0.35"
+  board_light_sensor: "none"
+  board_thermometer: "none"
+  light_sensor_min_brightness: "0.45"
+  light_sensor_low_lux: "2.0"
+  light_sensor_high_lux: "300.0"
+  light_sensor_presence_delta_lux: "35.0"
+  light_sensor_presence_delta_ratio: "0.35"
+  light_sensor_presence_ignore_after_screen_ms: "3000"
+
+packages:
+  board_light_sensor: !include "packages/board_light_sensor_${board_light_sensor}.yaml"
+  board_thermometer: !include "packages/board_thermometer_${board_thermometer}.yaml"
 
 esphome:
   name: ${name}
@@ -79,9 +91,11 @@ esphome:
             cmd(0x21); delay(120);
             cmd(0x29);
         - delay: 300ms
+        - lambda: 'id(screen_active_brightness) = id(screen_brightness);'
         - light.turn_on:
             id: display_backlight
-            brightness: !lambda 'return id(screen_brightness);'
+            brightness: !lambda 'return id(screen_active_brightness);'
+        - lambda: 'id(last_screen_state_change_ms) = millis();'
     - priority: -200
       then:
         - output.turn_on: speaker_amp_enable
@@ -163,6 +177,7 @@ interval:
                      millis() - id(last_touch_ms) > (uint32_t) id(screen_timeout_sec) * 1000UL;
           then:
             - lambda: 'id(screen_on) = false;'
+            - lambda: 'id(last_screen_state_change_ms) = millis();'
             - light.turn_on:
                 id: display_backlight
                 brightness: !lambda 'return id(screen_dim_brightness);'
@@ -221,6 +236,9 @@ globals:
     type: float
     restore_value: true
     initial_value: '${screen_brightness}'
+  - id: screen_active_brightness
+    type: float
+    initial_value: '${screen_brightness}'
   - id: screen_dim_brightness
     type: float
     restore_value: true
@@ -229,6 +247,9 @@ globals:
     type: bool
     initial_value: 'true'
   - id: last_touch_ms
+    type: uint32_t
+    initial_value: '0'
+  - id: last_screen_state_change_ms
     type: uint32_t
     initial_value: '0'
   - id: is_listening
@@ -253,9 +274,10 @@ script:
             lambda: 'return !id(screen_on);'
           then:
             - lambda: 'id(screen_on) = true;'
+            - lambda: 'id(last_screen_state_change_ms) = millis();'
             - light.turn_on:
                 id: display_backlight
-                brightness: !lambda 'return id(screen_brightness);'
+                brightness: !lambda 'return id(screen_active_brightness);'
   - id: refresh_thermostat_arc
     then:
       - lambda: |-

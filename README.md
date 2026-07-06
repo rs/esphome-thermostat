@@ -52,6 +52,8 @@ substitutions:
   climate_entity: climate.living_room
   name: living-room-thermostat
   friendly_name: Living Room Thermostat
+  board_light_sensor: none
+  board_thermometer: none
 
 packages:
   thermostat: github://rs/esphome-thermostat/thermostat.yaml@main
@@ -104,6 +106,24 @@ Useful substitutions:
 - `thermostat_min_tenths` / `thermostat_max_tenths`: setpoint range in tenths of a degree, defaulting to `180` to `320` for 18-32 °C.
 - `thermostat_step_tenths`: setpoint step in tenths of a degree, for example `5` for 0.5 degree steps.
 - `fan_mode_1` through `fan_mode_5`: fan mode service values sent to Home Assistant.
+- `board_light_sensor`: set to `present` when the optional base PCB has the VEML7700 light sensor populated; leave as `none` otherwise.
+- `board_thermometer`: set to `present` when the optional base PCB has the SHT45 temperature/humidity sensor populated; leave as `none` otherwise.
+
+When `board_light_sensor` is `present`, the VEML7700 reading is used locally to
+adjust the fully lit screen brightness and to wake the dimmed display when a
+fast ambient-light change is detected. The light sensor is kept internal to
+ESPHome by default. These substitutions tune that behavior:
+
+- `light_sensor_min_brightness`: minimum full-screen brightness used by auto brightness, default `0.45`.
+- `light_sensor_low_lux` / `light_sensor_high_lux`: lux range mapped to the brightness range, default `2.0` to `300.0`.
+- `light_sensor_presence_delta_lux`: minimum lux jump that can wake the screen, default `35.0`.
+- `light_sensor_presence_delta_ratio`: relative lux jump that can wake the screen, default `0.35`.
+- `light_sensor_presence_ignore_after_screen_ms`: debounce after screen state changes, default `3000`.
+
+When `board_thermometer` is `present`, the SHT45 is exposed to Home Assistant
+as `Board Temperature` and `Board Humidity`. The thermostat UI does not consume
+these readings directly; configure your Home Assistant climate entity separately
+if you want to use `Board Temperature` as the room temperature source.
 
 ## License
 

@@ -1,0 +1,14 @@
+sensor:
+  - platform: sht4x
+    id: board_thermometer
+    i2c_id: bus_a
+    address: 0x44
+    update_interval: 30s
+    precision: High
+    heater_max_duty: 0.0
+    temperature:
+      id: board_temperature
+      name: "Board Temperature"
+    humidity:
+      id: board_humidity
+      name: "Board Humidity"
