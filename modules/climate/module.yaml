@@ -123,6 +123,15 @@ script:
     then:
       - delay: 8s
       - script.execute: refresh_climate_ui
+  - id: adjust_target_temperature
+    mode: restart
+    parameters:
+      delta_tenths: int
+    then:
+      - lambda: !include adjust_target_temperature.cpp
+      - script.execute: refresh_thermostat_arc
+      - script.execute: send_target_temperature
+      - script.execute: expire_optimistic_climate_ui
   - id: send_target_temperature
     mode: restart
     then:

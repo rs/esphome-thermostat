@@ -10,12 +10,11 @@ binary_sensor:
     filters:
       - delayed_on: 20ms
     on_press:
-      - lambda: |-
-          float v = id(speaker_volume) - 0.1f;
-          if (v < 0.1f) v = 0.1f;
-          id(speaker_volume) = v;
-          id(es8311_codec).set_volume(v);
-          id(number_volume).publish_state(v * 100.0f);
+      - lambda: 'id(last_touch_ms) = millis();'
+      - script.execute: wake_screen
+      - script.execute:
+          id: adjust_target_temperature
+          delta_tenths: -5
   - platform: gpio
     pin:
       pca9554: expander
@@ -27,9 +26,8 @@ binary_sensor:
     filters:
       - delayed_on: 20ms
     on_press:
-      - lambda: |-
-          float v = id(speaker_volume) + 0.1f;
-          if (v > 1.0f) v = 1.0f;
-          id(speaker_volume) = v;
-          id(es8311_codec).set_volume(v);
-          id(number_volume).publish_state(v * 100.0f);
+      - lambda: 'id(last_touch_ms) = millis();'
+      - script.execute: wake_screen
+      - script.execute:
+          id: adjust_target_temperature
+          delta_tenths: 5
