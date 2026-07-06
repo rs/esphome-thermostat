@@ -61,6 +61,12 @@ widgets:
             text: "\U000F0425"
             text_font: font_icon
             align: CENTER
+            x: -32
+        - label:
+            text: "OFF"
+            text_font: font_small
+            align: CENTER
+            x: 26
   - button:
       id: btn_mode_heat
       checkable: true
@@ -87,6 +93,12 @@ widgets:
             text: "\U000F0599"
             text_font: font_icon
             align: CENTER
+            x: -34
+        - label:
+            text: "HEAT"
+            text_font: font_small
+            align: CENTER
+            x: 28
   - button:
       id: btn_mode_cool
       checkable: true
@@ -113,6 +125,12 @@ widgets:
             text: "\U000F0717"
             text_font: font_icon
             align: CENTER
+            x: -34
+        - label:
+            text: "COOL"
+            text_font: font_small
+            align: CENTER
+            x: 28
   - button:
       id: btn_mode_auto
       checkable: true
@@ -129,13 +147,95 @@ widgets:
       radius: 8
       shadow_width: 0
       on_click:
-        - homeassistant.action:
-            action: climate.set_hvac_mode
-            data:
-              entity_id: ${climate_entity}
-              hvac_mode: heat_cool
+        - if:
+            condition:
+              lambda: !include ../../climate/should_send_auto_hvac_mode.cpp
+            then:
+              - homeassistant.action:
+                  action: climate.set_hvac_mode
+                  data:
+                    entity_id: ${climate_entity}
+                    hvac_mode: auto
+            else:
+              - homeassistant.action:
+                  action: climate.set_hvac_mode
+                  data:
+                    entity_id: ${climate_entity}
+                    hvac_mode: heat_cool
       widgets:
         - label:
             text: "\U000F1796"
             text_font: font_icon
             align: CENTER
+            x: -34
+        - label:
+            text: "AUTO"
+            text_font: font_small
+            align: CENTER
+            x: 28
+  - button:
+      id: btn_mode_dry
+      checkable: true
+      hidden: true
+      align: CENTER
+      x: -112
+      y: 166
+      width: 152
+      height: 78
+      bg_color: 0x111827
+      checked:
+        bg_color: 0xB7791F
+      border_width: 1
+      border_color: 0x334155
+      radius: 8
+      shadow_width: 0
+      on_click:
+        - homeassistant.action:
+            action: climate.set_hvac_mode
+            data:
+              entity_id: ${climate_entity}
+              hvac_mode: dry
+      widgets:
+        - label:
+            text: "\U000F1A45"
+            text_font: font_icon
+            align: CENTER
+            x: -32
+        - label:
+            text: "DRY"
+            text_font: font_small
+            align: CENTER
+            x: 26
+  - button:
+      id: btn_mode_fan_only
+      checkable: true
+      hidden: true
+      align: CENTER
+      x: 112
+      y: 166
+      width: 152
+      height: 78
+      bg_color: 0x111827
+      checked:
+        bg_color: 0x2095F6
+      border_width: 1
+      border_color: 0x334155
+      radius: 8
+      shadow_width: 0
+      on_click:
+        - homeassistant.action:
+            action: climate.set_hvac_mode
+            data:
+              entity_id: ${climate_entity}
+              hvac_mode: fan_only
+      widgets:
+        - label:
+            text: "\U000F0210"
+            text_font: font_icon
+            align: CENTER
+            x: -32
+        - label:
+            text: "FAN"
+            text_font: font_small
+            align: CENTER
+            x: 26

@@ -122,7 +122,7 @@ Useful substitutions:
 - `climate_entity`: Home Assistant climate entity to control.
 - `thermostat_min_tenths` / `thermostat_max_tenths`: setpoint range in tenths of a degree, defaulting to `180` to `320` for 18-32 °C.
 - `thermostat_step_tenths`: setpoint step in tenths of a degree, for example `5` for 0.5 degree steps.
-- `fan_mode_1` through `fan_mode_5`: fan mode service values sent to Home Assistant.
+- `fan_mode_1` through `fan_mode_5`: fallback fan mode service values used before Home Assistant publishes the climate entity's `fan_modes` capability list. Once available, up to eight reported fan modes are shown automatically.
 - `base_light_sensor`: set to `present` when the optional base PCB has the VEML7700 light sensor populated; leave as `none` otherwise.
 - `base_thermometer`: set to `present` when the optional base PCB has the SHT45 temperature/humidity sensor populated; leave as `none` otherwise.
 - `base_light_sensor_id` / `base_light_sensor_name`: ESPHome ID and Home Assistant name for the VEML7700 ambient light reading.

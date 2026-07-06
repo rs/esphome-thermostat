@@ -34,9 +34,6 @@
   lv_obj_set_style_border_opa(id(arc_delta), LV_OPA_TRANSP, LV_PART_KNOB);
   lv_obj_remove_style(id(arc_delta), nullptr, LV_PART_KNOB);
 
-  const char *mode_label = heat ? "Heat" : cool ? "Cool" : heat_cool ? "Heat/Cool" : off ? "Off" : "Thermostat";
-  lv_label_set_text(id(lbl_hvac_action), mode_label);
-  lv_obj_set_style_text_color(id(lbl_hvac_action), lv_color_hex(off ? 0xA3A3A3 : delta_color), LV_PART_MAIN);
   lv_obj_set_style_text_color(id(lbl_current_temp), lv_color_hex(off ? 0xA3A3A3 : delta_color), LV_PART_MAIN);
 
   auto value_angle = [](float value) {

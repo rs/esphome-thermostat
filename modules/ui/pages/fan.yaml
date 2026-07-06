@@ -38,10 +38,11 @@ widgets:
   - button:
       id: btn_fan_1
       checkable: true
-      align: TOP_MID
-      y: 110
-      width: 280
-      height: 52
+      align: CENTER
+      x: -104
+      y: -105
+      width: 182
+      height: 58
       bg_color: 0x111827
       checked:
         bg_color: 0x2095F6
@@ -54,19 +55,28 @@ widgets:
             action: climate.set_fan_mode
             data:
               entity_id: ${climate_entity}
-              fan_mode: ${fan_mode_1}
+              fan_mode: !lambda 'return id(fan_mode_slot_1);'
       widgets:
         - label:
-            text: "AUTO"
+            id: lbl_fan_1_icon
+            text: "\U000F0210"
+            text_font: font_icon
+            align: CENTER
+            x: -50
+        - label:
+            id: lbl_fan_1_value
+            text: "--"
             text_font: font_small
             align: CENTER
+            x: 24
   - button:
       id: btn_fan_2
       checkable: true
-      align: TOP_MID
-      y: 172
-      width: 280
-      height: 52
+      align: CENTER
+      x: 104
+      y: -105
+      width: 182
+      height: 58
       bg_color: 0x111827
       checked:
         bg_color: 0x2095F6
@@ -79,19 +89,28 @@ widgets:
             action: climate.set_fan_mode
             data:
               entity_id: ${climate_entity}
-              fan_mode: ${fan_mode_2}
+              fan_mode: !lambda 'return id(fan_mode_slot_2);'
       widgets:
         - label:
-            text: "LOW"
+            id: lbl_fan_2_icon
+            text: "\U000F1472"
+            text_font: font_icon
+            align: CENTER
+            x: -50
+        - label:
+            id: lbl_fan_2_value
+            text: "--"
             text_font: font_small
             align: CENTER
+            x: 24
   - button:
       id: btn_fan_3
       checkable: true
-      align: TOP_MID
-      y: 234
-      width: 280
-      height: 52
+      align: CENTER
+      x: -104
+      y: -35
+      width: 182
+      height: 58
       bg_color: 0x111827
       checked:
         bg_color: 0x2095F6
@@ -104,19 +123,28 @@ widgets:
             action: climate.set_fan_mode
             data:
               entity_id: ${climate_entity}
-              fan_mode: ${fan_mode_3}
+              fan_mode: !lambda 'return id(fan_mode_slot_3);'
       widgets:
         - label:
-            text: "MEDIUM"
+            id: lbl_fan_3_icon
+            text: "\U000F1473"
+            text_font: font_icon
+            align: CENTER
+            x: -50
+        - label:
+            id: lbl_fan_3_value
+            text: "--"
             text_font: font_small
             align: CENTER
+            x: 24
   - button:
       id: btn_fan_4
       checkable: true
-      align: TOP_MID
-      y: 296
-      width: 280
-      height: 52
+      align: CENTER
+      x: 104
+      y: -35
+      width: 182
+      height: 58
       bg_color: 0x111827
       checked:
         bg_color: 0x2095F6
@@ -129,19 +157,28 @@ widgets:
             action: climate.set_fan_mode
             data:
               entity_id: ${climate_entity}
-              fan_mode: ${fan_mode_4}
+              fan_mode: !lambda 'return id(fan_mode_slot_4);'
       widgets:
         - label:
-            text: "HIGH"
+            id: lbl_fan_4_icon
+            text: "\U000F1474"
+            text_font: font_icon
+            align: CENTER
+            x: -50
+        - label:
+            id: lbl_fan_4_value
+            text: "--"
             text_font: font_small
             align: CENTER
+            x: 24
   - button:
       id: btn_fan_5
       checkable: true
-      align: TOP_MID
-      y: 358
-      width: 280
-      height: 52
+      align: CENTER
+      x: -104
+      y: 35
+      width: 182
+      height: 58
       bg_color: 0x111827
       checked:
         bg_color: 0x2095F6
@@ -154,9 +191,122 @@ widgets:
             action: climate.set_fan_mode
             data:
               entity_id: ${climate_entity}
-              fan_mode: ${fan_mode_5}
+              fan_mode: !lambda 'return id(fan_mode_slot_5);'
       widgets:
         - label:
-            text: "ON"
+            id: lbl_fan_5_icon
+            text: "\U000F146F"
+            text_font: font_icon
+            align: CENTER
+            x: -50
+        - label:
+            id: lbl_fan_5_value
+            text: "--"
             text_font: font_small
             align: CENTER
+            x: 24
+  - button:
+      id: btn_fan_6
+      checkable: true
+      hidden: true
+      align: CENTER
+      x: 104
+      y: 35
+      width: 182
+      height: 58
+      bg_color: 0x111827
+      checked:
+        bg_color: 0x2095F6
+      border_width: 1
+      border_color: 0x334155
+      radius: 8
+      shadow_width: 0
+      on_click:
+        - homeassistant.action:
+            action: climate.set_fan_mode
+            data:
+              entity_id: ${climate_entity}
+              fan_mode: !lambda 'return id(fan_mode_slot_6);'
+      widgets:
+        - label:
+            id: lbl_fan_6_icon
+            text: "\U000F0210"
+            text_font: font_icon
+            align: CENTER
+            x: -50
+        - label:
+            id: lbl_fan_6_value
+            text: "--"
+            text_font: font_small
+            align: CENTER
+            x: 24
+  - button:
+      id: btn_fan_7
+      checkable: true
+      hidden: true
+      align: CENTER
+      x: -104
+      y: 105
+      width: 182
+      height: 58
+      bg_color: 0x111827
+      checked:
+        bg_color: 0x2095F6
+      border_width: 1
+      border_color: 0x334155
+      radius: 8
+      shadow_width: 0
+      on_click:
+        - homeassistant.action:
+            action: climate.set_fan_mode
+            data:
+              entity_id: ${climate_entity}
+              fan_mode: !lambda 'return id(fan_mode_slot_7);'
+      widgets:
+        - label:
+            id: lbl_fan_7_icon
+            text: "\U000F0210"
+            text_font: font_icon
+            align: CENTER
+            x: -50
+        - label:
+            id: lbl_fan_7_value
+            text: "--"
+            text_font: font_small
+            align: CENTER
+            x: 24
+  - button:
+      id: btn_fan_8
+      checkable: true
+      hidden: true
+      align: CENTER
+      x: 104
+      y: 105
+      width: 182
+      height: 58
+      bg_color: 0x111827
+      checked:
+        bg_color: 0x2095F6
+      border_width: 1
+      border_color: 0x334155
+      radius: 8
+      shadow_width: 0
+      on_click:
+        - homeassistant.action:
+            action: climate.set_fan_mode
+            data:
+              entity_id: ${climate_entity}
+              fan_mode: !lambda 'return id(fan_mode_slot_8);'
+      widgets:
+        - label:
+            id: lbl_fan_8_icon
+            text: "\U000F0210"
+            text_font: font_icon
+            align: CENTER
+            x: -50
+        - label:
+            id: lbl_fan_8_value
+            text: "--"
+            text_font: font_small
+            align: CENTER
+            x: 24

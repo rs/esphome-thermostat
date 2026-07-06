@@ -4,6 +4,30 @@ globals:
   - id: pending_target_temperature
     type: float
     initial_value: '20.0'
+  - id: fan_mode_slot_1
+    type: std::string
+    initial_value: '"${fan_mode_1}"'
+  - id: fan_mode_slot_2
+    type: std::string
+    initial_value: '"${fan_mode_2}"'
+  - id: fan_mode_slot_3
+    type: std::string
+    initial_value: '"${fan_mode_3}"'
+  - id: fan_mode_slot_4
+    type: std::string
+    initial_value: '"${fan_mode_4}"'
+  - id: fan_mode_slot_5
+    type: std::string
+    initial_value: '"${fan_mode_5}"'
+  - id: fan_mode_slot_6
+    type: std::string
+    initial_value: '""'
+  - id: fan_mode_slot_7
+    type: std::string
+    initial_value: '""'
+  - id: fan_mode_slot_8
+    type: std::string
+    initial_value: '""'
 
 sensor:
   - platform: homeassistant
@@ -36,9 +60,23 @@ text_sensor:
     on_value:
       - script.execute: refresh_climate_ui
   - platform: homeassistant
+    id: ha_hvac_modes
+    entity_id: ${climate_entity}
+    attribute: hvac_modes
+    internal: true
+    on_value:
+      - script.execute: refresh_climate_ui
+  - platform: homeassistant
     id: ha_fan_mode
     entity_id: ${climate_entity}
     attribute: fan_mode
+    internal: true
+    on_value:
+      - script.execute: refresh_climate_ui
+  - platform: homeassistant
+    id: ha_fan_modes
+    entity_id: ${climate_entity}
+    attribute: fan_modes
     internal: true
     on_value:
       - script.execute: refresh_climate_ui
