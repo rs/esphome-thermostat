@@ -6,6 +6,18 @@ esphome:
       then:
         - lambda: !include setup_dropdowns.cpp
 
+wifi:
+  on_connect:
+    - lambda: |-
+        if (id(lbl_wifi_status) != nullptr) {
+          lv_obj_add_flag(id(lbl_wifi_status), LV_OBJ_FLAG_HIDDEN);
+        }
+  on_disconnect:
+    - lambda: |-
+        if (id(lbl_wifi_status) != nullptr) {
+          lv_obj_clear_flag(id(lbl_wifi_status), LV_OBJ_FLAG_HIDDEN);
+        }
+
 packages:
   fonts: !include fonts.yaml
   lvgl: !include lvgl.yaml

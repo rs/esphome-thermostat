@@ -4,6 +4,24 @@ globals:
   - id: pending_target_temperature
     type: float
     initial_value: '20.0'
+  - id: optimistic_target_temperature_until_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+  - id: optimistic_hvac_mode
+    type: std::string
+    initial_value: '""'
+  - id: optimistic_hvac_mode_until_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+  - id: optimistic_fan_mode
+    type: std::string
+    initial_value: '""'
+  - id: optimistic_fan_mode_until_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
   - id: dropdown_arc_guard_until_ms
     type: uint32_t
     restore_value: false
@@ -47,6 +65,7 @@ sensor:
     attribute: temperature
     internal: true
     on_value:
+      - lambda: 'id(optimistic_target_temperature_until_ms) = 0;'
       - script.execute: refresh_climate_ui
 
 text_sensor:
@@ -55,6 +74,9 @@ text_sensor:
     entity_id: ${climate_entity}
     internal: true
     on_value:
+      - lambda: |-
+          id(optimistic_hvac_mode).clear();
+          id(optimistic_hvac_mode_until_ms) = 0;
       - script.execute: refresh_climate_ui
   - platform: homeassistant
     id: ha_hvac_action
@@ -76,6 +98,9 @@ text_sensor:
     attribute: fan_mode
     internal: true
     on_value:
+      - lambda: |-
+          id(optimistic_fan_mode).clear();
+          id(optimistic_fan_mode_until_ms) = 0;
       - script.execute: refresh_climate_ui
   - platform: homeassistant
     id: ha_fan_modes
@@ -93,6 +118,11 @@ script:
     then:
       - lambda: !include refresh_climate_ui.cpp
       - script.execute: refresh_thermostat_arc
+  - id: expire_optimistic_climate_ui
+    mode: restart
+    then:
+      - delay: 8s
+      - script.execute: refresh_climate_ui
   - id: send_target_temperature
     mode: restart
     then:

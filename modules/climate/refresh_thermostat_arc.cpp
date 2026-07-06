@@ -1,5 +1,12 @@
 |-
-  const std::string mode = id(ha_climate_state).state;
+  std::string mode = id(ha_climate_state).state;
+  if (!id(optimistic_hvac_mode).empty() &&
+      (int32_t) (millis() - id(optimistic_hvac_mode_until_ms)) < 0) {
+    mode = id(optimistic_hvac_mode);
+  } else {
+    id(optimistic_hvac_mode).clear();
+    id(optimistic_hvac_mode_until_ms) = 0;
+  }
   const float current = id(ha_current_temperature).state;
   const float target = id(pending_target_temperature);
 

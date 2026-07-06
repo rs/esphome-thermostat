@@ -1,0 +1,8 @@
+label:
+  id: lbl_wifi_status
+  text: "\U000F05AA"
+  text_font: font_icon
+  text_color: 0xF87171
+  align: TOP_RIGHT
+  x: -16
+  y: 14

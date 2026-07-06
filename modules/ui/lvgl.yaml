@@ -16,4 +16,5 @@ lvgl:
     - !include pages/thermostat.yaml
   top_layer:
     widgets:
+      - !include layers/wifi_status.yaml
       - !include layers/voice_overlay.yaml

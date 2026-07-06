@@ -28,6 +28,7 @@ widgets:
             then:
               - lambda: |-
                   id(pending_target_temperature) = x / 10.0f;
+                  id(optimistic_target_temperature_until_ms) = millis() + 8000;
                   char buf[16];
                   snprintf(buf, sizeof(buf), "%.1f°", id(pending_target_temperature));
                   lv_label_set_text(id(lbl_target_temp), buf);
@@ -37,13 +38,10 @@ widgets:
             condition:
               lambda: return (int32_t) (millis() - id(dropdown_arc_guard_until_ms)) >= 0;
             then:
-              - lambda: |-
-                  int rounded = ((int) lroundf(x / ${thermostat_step_tenths})) * ${thermostat_step_tenths};
-                  if (rounded < ${thermostat_min_tenths}) rounded = ${thermostat_min_tenths};
-                  if (rounded > ${thermostat_max_tenths}) rounded = ${thermostat_max_tenths};
-                  id(pending_target_temperature) = rounded / 10.0f;
-                  lv_arc_set_value(id(arc_thermostat), rounded);
+              - lambda: !include ../../climate/set_optimistic_target_temperature.cpp
+              - script.execute: refresh_thermostat_arc
               - script.execute: send_target_temperature
+              - script.execute: expire_optimistic_climate_ui
   - arc:
       id: arc_track
       align: CENTER
@@ -174,6 +172,9 @@ widgets:
             x: 48
             y: 0
       on_value:
+        - lambda: !include ../../climate/set_optimistic_hvac_mode.cpp
+        - script.execute: refresh_thermostat_arc
+        - script.execute: expire_optimistic_climate_ui
         - if:
             condition:
               lambda: return text == "OFF";
@@ -286,6 +287,8 @@ widgets:
             x: 48
             y: 0
       on_value:
+        - lambda: !include ../../climate/set_optimistic_fan_mode.cpp
+        - script.execute: expire_optimistic_climate_ui
         - if:
             condition:
               lambda: |-

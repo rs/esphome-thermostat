@@ -76,11 +76,42 @@
   };
 
   const float current = id(ha_current_temperature).state;
-  const float target = id(ha_target_temperature).state;
-  const std::string mode = id(ha_climate_state).state;
+  const float ha_target = id(ha_target_temperature).state;
+  float target = ha_target;
   const std::string hvac_modes = id(ha_hvac_modes).state;
-  const std::string fan = id(ha_fan_mode).state;
+  std::string display_mode = id(ha_climate_state).state;
+  std::string fan = id(ha_fan_mode).state;
   const std::string fan_modes = id(ha_fan_modes).state;
+  const bool optimistic_target_active =
+      (int32_t) (millis() - id(optimistic_target_temperature_until_ms)) < 0;
+  const bool optimistic_mode_active =
+      !id(optimistic_hvac_mode).empty() &&
+      (int32_t) (millis() - id(optimistic_hvac_mode_until_ms)) < 0;
+  const bool optimistic_fan_active =
+      !id(optimistic_fan_mode).empty() &&
+      (int32_t) (millis() - id(optimistic_fan_mode_until_ms)) < 0;
+
+  if (optimistic_target_active) {
+    target = id(pending_target_temperature);
+  } else if (std::isnan(ha_target)) {
+    target = NAN;
+  } else {
+    id(optimistic_target_temperature_until_ms) = 0;
+  }
+
+  if (optimistic_mode_active) {
+    display_mode = id(optimistic_hvac_mode);
+  } else {
+    id(optimistic_hvac_mode).clear();
+    id(optimistic_hvac_mode_until_ms) = 0;
+  }
+
+  if (optimistic_fan_active) {
+    fan = id(optimistic_fan_mode);
+  } else {
+    id(optimistic_fan_mode).clear();
+    id(optimistic_fan_mode_until_ms) = 0;
+  }
   const bool hvac_modes_known = !(hvac_modes.empty() ||
                                   hvac_modes == "unknown" ||
                                   hvac_modes == "unavailable");
@@ -112,7 +143,8 @@
   bool mode_matched = false;
   auto add_mode_option = [&](const std::string &service, const std::string &label) {
     if (service.empty()) return;
-    if (mode == service || (label == "AUTO" && (mode == "heat_cool" || mode == "auto"))) {
+    if (display_mode == service ||
+        (label == "AUTO" && (display_mode == "heat_cool" || display_mode == "auto"))) {
       mode_selected = mode_options.size();
       mode_matched = true;
     }
@@ -125,16 +157,16 @@
   if (supports_auto) add_mode_option(supports_mode("auto") && !supports_mode("heat_cool") ? "auto" : "heat_cool", "AUTO");
   if (supports_mode("dry")) add_mode_option("dry", "DRY");
   if (supports_mode("fan_only")) add_mode_option("fan_only", "FAN");
-  if (!mode_matched && !mode.empty() && mode != "unknown" && mode != "unavailable") {
+  if (!mode_matched && !display_mode.empty() && display_mode != "unknown" && display_mode != "unavailable") {
     mode_selected = mode_options.size();
-    mode_options.push_back(mode_name(mode));
+    mode_options.push_back(mode_name(display_mode));
   }
   if (mode_options.empty()) mode_options.push_back("--");
 
   id(dd_mode).set_options(mode_options);
   id(dd_mode).set_selected_index(mode_selected, LV_ANIM_OFF);
   lv_dropdown_set_text(id(dd_mode).obj, "");
-  lv_label_set_text(id(lbl_mode_dropdown_icon), mode_icon(mode));
+  lv_label_set_text(id(lbl_mode_dropdown_icon), mode_icon(display_mode));
   lv_label_set_text(id(lbl_mode_dropdown_text), mode_options[mode_selected].c_str());
 
   std::string fan_slots[8];
