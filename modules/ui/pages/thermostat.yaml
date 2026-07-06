@@ -22,20 +22,28 @@ widgets:
         bg_color: 0xFFFFFF
         border_width: 0
       on_value:
-        - lambda: |-
-            id(pending_target_temperature) = x / 10.0f;
-            char buf[16];
-            snprintf(buf, sizeof(buf), "%.1f°", id(pending_target_temperature));
-            lv_label_set_text(id(lbl_target_temp), buf);
-        - script.execute: refresh_thermostat_arc
+        - if:
+            condition:
+              lambda: return (int32_t) (millis() - id(dropdown_arc_guard_until_ms)) >= 0;
+            then:
+              - lambda: |-
+                  id(pending_target_temperature) = x / 10.0f;
+                  char buf[16];
+                  snprintf(buf, sizeof(buf), "%.1f°", id(pending_target_temperature));
+                  lv_label_set_text(id(lbl_target_temp), buf);
+              - script.execute: refresh_thermostat_arc
       on_release:
-        - lambda: |-
-            int rounded = ((int) lroundf(x / ${thermostat_step_tenths})) * ${thermostat_step_tenths};
-            if (rounded < ${thermostat_min_tenths}) rounded = ${thermostat_min_tenths};
-            if (rounded > ${thermostat_max_tenths}) rounded = ${thermostat_max_tenths};
-            id(pending_target_temperature) = rounded / 10.0f;
-            lv_arc_set_value(id(arc_thermostat), rounded);
-        - script.execute: send_target_temperature
+        - if:
+            condition:
+              lambda: return (int32_t) (millis() - id(dropdown_arc_guard_until_ms)) >= 0;
+            then:
+              - lambda: |-
+                  int rounded = ((int) lroundf(x / ${thermostat_step_tenths})) * ${thermostat_step_tenths};
+                  if (rounded < ${thermostat_min_tenths}) rounded = ${thermostat_min_tenths};
+                  if (rounded > ${thermostat_max_tenths}) rounded = ${thermostat_max_tenths};
+                  id(pending_target_temperature) = rounded / 10.0f;
+                  lv_arc_set_value(id(arc_thermostat), rounded);
+              - script.execute: send_target_temperature
   - arc:
       id: arc_track
       align: CENTER
@@ -118,67 +126,197 @@ widgets:
       text_color: 0xFF6F22
       align: CENTER
       y: 88
-  - button:
-      id: btn_mode_chip
+  - dropdown:
+      id: dd_mode
       align: BOTTOM_MID
       x: -78
       y: -36
       width: 138
       height: 44
+      options:
+        - AUTO
+      selected_text: AUTO
+      dir: TOP
       bg_color: 0x111827
+      text_font: font_small
+      text_color: 0x111827
       border_width: 1
       border_color: 0x475569
+      pad_left: 0
+      pad_right: 0
       radius: 6
       shadow_width: 0
-      on_click:
-        - lvgl.page.show:
-            id: mode_page
-            animation: MOVE_LEFT
-            time: 200ms
+      dropdown_list:
+        bg_color: 0x111827
+        text_font: font_small
+        text_color: 0xF8FAFC
+        border_width: 1
+        border_color: 0x475569
+        radius: 6
+        selected:
+          bg_color: 0x2095F6
+          text_color: 0xFFFFFF
       widgets:
         - label:
-            id: lbl_mode_chip
+            id: lbl_mode_dropdown_icon
             text: "\U000F1796"
             text_font: font_icon
             text_color: 0xF8FAFC
-            align: CENTER
-            x: -38
+            align: TOP_LEFT
+            x: 14
+            y: -4
         - label:
-            id: lbl_mode_chip_text
-            text: "--"
+            id: lbl_mode_dropdown_text
+            text: "AUTO"
             text_font: font_small
             text_color: 0xF8FAFC
-            align: CENTER
-            x: 20
-  - button:
-      id: btn_fan_chip
+            align: TOP_LEFT
+            x: 48
+            y: 0
+      on_value:
+        - if:
+            condition:
+              lambda: return text == "OFF";
+            then:
+              - homeassistant.action:
+                  action: climate.set_hvac_mode
+                  data:
+                    entity_id: ${climate_entity}
+                    hvac_mode: "off"
+        - if:
+            condition:
+              lambda: return text == "HEAT";
+            then:
+              - homeassistant.action:
+                  action: climate.set_hvac_mode
+                  data:
+                    entity_id: ${climate_entity}
+                    hvac_mode: heat
+        - if:
+            condition:
+              lambda: return text == "COOL";
+            then:
+              - homeassistant.action:
+                  action: climate.set_hvac_mode
+                  data:
+                    entity_id: ${climate_entity}
+                    hvac_mode: cool
+        - if:
+            condition:
+              lambda: return text == "AUTO";
+            then:
+              - if:
+                  condition:
+                    lambda: !include ../../climate/should_send_auto_hvac_mode.cpp
+                  then:
+                    - homeassistant.action:
+                        action: climate.set_hvac_mode
+                        data:
+                          entity_id: ${climate_entity}
+                          hvac_mode: auto
+                  else:
+                    - homeassistant.action:
+                        action: climate.set_hvac_mode
+                        data:
+                          entity_id: ${climate_entity}
+                          hvac_mode: heat_cool
+        - if:
+            condition:
+              lambda: return text == "DRY";
+            then:
+              - homeassistant.action:
+                  action: climate.set_hvac_mode
+                  data:
+                    entity_id: ${climate_entity}
+                    hvac_mode: dry
+        - if:
+            condition:
+              lambda: return text == "FAN";
+            then:
+              - homeassistant.action:
+                  action: climate.set_hvac_mode
+                  data:
+                    entity_id: ${climate_entity}
+                    hvac_mode: fan_only
+  - dropdown:
+      id: dd_fan
       align: BOTTOM_MID
       x: 78
       y: -36
       width: 138
       height: 44
+      options:
+        - AUTO
+      selected_text: AUTO
+      dir: TOP
       bg_color: 0x111827
+      text_font: font_small
+      text_color: 0x111827
       border_width: 1
       border_color: 0x475569
+      pad_left: 0
+      pad_right: 0
       radius: 6
       shadow_width: 0
-      on_click:
-        - lvgl.page.show:
-            id: fan_page
-            animation: MOVE_LEFT
-            time: 200ms
+      dropdown_list:
+        bg_color: 0x111827
+        text_font: font_small
+        text_color: 0xF8FAFC
+        border_width: 1
+        border_color: 0x475569
+        radius: 6
+        selected:
+          bg_color: 0x2095F6
+          text_color: 0xFFFFFF
       widgets:
         - label:
-            id: lbl_fan_icon
+            id: lbl_fan_dropdown_icon
             text: "\U000F0210"
             text_font: font_icon
             text_color: 0xF8FAFC
-            align: CENTER
-            x: -38
+            align: TOP_LEFT
+            x: 14
+            y: -4
         - label:
-            id: lbl_fan_chip
-            text: "--"
+            id: lbl_fan_dropdown_text
+            text: "AUTO"
             text_font: font_small
             text_color: 0xF8FAFC
-            align: CENTER
-            x: 20
+            align: TOP_LEFT
+            x: 48
+            y: 0
+      on_value:
+        - if:
+            condition:
+              lambda: |-
+                if (text == "--") return false;
+                std::string value;
+                switch (x) {
+                  case 0: value = id(fan_mode_slot_1); break;
+                  case 1: value = id(fan_mode_slot_2); break;
+                  case 2: value = id(fan_mode_slot_3); break;
+                  case 3: value = id(fan_mode_slot_4); break;
+                  case 4: value = id(fan_mode_slot_5); break;
+                  case 5: value = id(fan_mode_slot_6); break;
+                  case 6: value = id(fan_mode_slot_7); break;
+                  case 7: value = id(fan_mode_slot_8); break;
+                  default: return false;
+                }
+                return !value.empty() && value != "unknown" && value != "unavailable";
+            then:
+              - homeassistant.action:
+                  action: climate.set_fan_mode
+                  data:
+                    entity_id: ${climate_entity}
+                    fan_mode: !lambda |-
+                      switch (x) {
+                        case 0: return id(fan_mode_slot_1);
+                        case 1: return id(fan_mode_slot_2);
+                        case 2: return id(fan_mode_slot_3);
+                        case 3: return id(fan_mode_slot_4);
+                        case 4: return id(fan_mode_slot_5);
+                        case 5: return id(fan_mode_slot_6);
+                        case 6: return id(fan_mode_slot_7);
+                        case 7: return id(fan_mode_slot_8);
+                        default: return std::string("");
+                      }

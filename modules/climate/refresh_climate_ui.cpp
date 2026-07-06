@@ -9,20 +9,6 @@
     snprintf(buf, sizeof(buf), precision == 0 ? "%.0f\xC2\xB0" : "%.1f\xC2\xB0", value);
     return std::string(buf);
   };
-  auto set_checked = [](lv_obj_t *obj, bool checked) {
-    if (checked) {
-      lv_obj_add_state(obj, LV_STATE_CHECKED);
-    } else {
-      lv_obj_clear_state(obj, LV_STATE_CHECKED);
-    }
-  };
-  auto set_hidden = [](lv_obj_t *obj, bool hidden) {
-    if (hidden) {
-      lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
-    } else {
-      lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
-    }
-  };
   auto token_contains = [](const std::string &text, const std::string &needle) {
     size_t pos = 0;
     while (pos < text.size()) {
@@ -47,15 +33,6 @@
     }
     return false;
   };
-  auto mode_icon = [](const std::string &s) -> const char * {
-    if (s == "off") return "\U000F0425";
-    if (s == "heat") return "\U000F0599";
-    if (s == "cool") return "\U000F0717";
-    if (s == "heat_cool" || s == "auto") return "\U000F1796";
-    if (s == "dry") return "\U000F1A45";
-    if (s == "fan_only") return "\U000F0210";
-    return "\U000F1796";
-  };
   auto mode_name = [&](const std::string &s) {
     if (s == "off") return std::string("OFF");
     if (s == "heat") return std::string("HEAT");
@@ -65,12 +42,26 @@
     if (s == "fan_only") return std::string("FAN");
     return upper(s);
   };
+  auto mode_icon = [](const std::string &s) -> const char * {
+    if (s == "off") return "\U000F0425";
+    if (s == "heat") return "\U000F0599";
+    if (s == "cool") return "\U000F0717";
+    if (s == "heat_cool" || s == "auto") return "\U000F1796";
+    if (s == "dry") return "\U000F1A45";
+    if (s == "fan_only") return "\U000F0210";
+    return "\U000F1796";
+  };
   auto is_numeric = [](const std::string &s) {
     if (s.empty()) return false;
     for (const char c : s) {
       if (c < '0' || c > '9') return false;
     }
     return true;
+  };
+  auto fan_name = [&](const std::string &s) {
+    if (s.empty() || s == "unknown" || s == "unavailable") return std::string("--");
+    if (is_numeric(s)) return std::string("SPEED ") + s;
+    return upper(s);
   };
   auto fan_icon = [&](const std::string &s) -> const char * {
     if (s == "off") return "\U000F081D";
@@ -82,10 +73,6 @@
     // MDI 7.4.47 has fan-plus, but not fan-speed-plus.
     if (is_numeric(s)) return "\U000F146F";
     return "\U000F0210";
-  };
-  auto fan_name = [&](const std::string &s) {
-    if (s.empty() || s == "unknown" || s == "unavailable") return std::string("--");
-    return upper(s);
   };
 
   const float current = id(ha_current_temperature).state;
@@ -120,26 +107,35 @@
     lv_arc_set_value(id(arc_thermostat), (int) lroundf(target * 10.0f));
   }
 
-  lv_label_set_text(id(lbl_mode_value), mode_name(mode).c_str());
-  lv_label_set_text(id(lbl_mode_chip), mode_icon(mode));
-  lv_label_set_text(id(lbl_mode_chip_text), mode_name(mode).c_str());
-  lv_label_set_text(id(lbl_fan_icon), fan_icon(fan));
-  lv_label_set_text(id(lbl_fan_value), fan_name(fan).c_str());
-  lv_label_set_text(id(lbl_fan_chip), fan_name(fan).c_str());
+  std::vector<std::string> mode_options;
+  int mode_selected = 0;
+  bool mode_matched = false;
+  auto add_mode_option = [&](const std::string &service, const std::string &label) {
+    if (service.empty()) return;
+    if (mode == service || (label == "AUTO" && (mode == "heat_cool" || mode == "auto"))) {
+      mode_selected = mode_options.size();
+      mode_matched = true;
+    }
+    mode_options.push_back(label);
+  };
 
-  set_checked(id(btn_mode_off), mode == "off");
-  set_checked(id(btn_mode_heat), mode == "heat");
-  set_checked(id(btn_mode_cool), mode == "cool");
-  set_checked(id(btn_mode_auto), mode == "heat_cool" || mode == "auto");
-  set_checked(id(btn_mode_dry), mode == "dry");
-  set_checked(id(btn_mode_fan_only), mode == "fan_only");
+  if (supports_mode("off")) add_mode_option("off", "OFF");
+  if (supports_mode("heat")) add_mode_option("heat", "HEAT");
+  if (supports_mode("cool")) add_mode_option("cool", "COOL");
+  if (supports_auto) add_mode_option(supports_mode("auto") && !supports_mode("heat_cool") ? "auto" : "heat_cool", "AUTO");
+  if (supports_mode("dry")) add_mode_option("dry", "DRY");
+  if (supports_mode("fan_only")) add_mode_option("fan_only", "FAN");
+  if (!mode_matched && !mode.empty() && mode != "unknown" && mode != "unavailable") {
+    mode_selected = mode_options.size();
+    mode_options.push_back(mode_name(mode));
+  }
+  if (mode_options.empty()) mode_options.push_back("--");
 
-  set_hidden(id(btn_mode_off), !supports_mode("off"));
-  set_hidden(id(btn_mode_heat), !supports_mode("heat"));
-  set_hidden(id(btn_mode_cool), !supports_mode("cool"));
-  set_hidden(id(btn_mode_auto), !supports_auto);
-  set_hidden(id(btn_mode_dry), !supports_mode("dry"));
-  set_hidden(id(btn_mode_fan_only), !supports_mode("fan_only"));
+  id(dd_mode).set_options(mode_options);
+  id(dd_mode).set_selected_index(mode_selected, LV_ANIM_OFF);
+  lv_dropdown_set_text(id(dd_mode).obj, "");
+  lv_label_set_text(id(lbl_mode_dropdown_icon), mode_icon(mode));
+  lv_label_set_text(id(lbl_mode_dropdown_text), mode_options[mode_selected].c_str());
 
   std::string fan_slots[8];
   int fan_count = 0;
@@ -184,7 +180,7 @@
     add_fan_mode("${fan_mode_4}");
     add_fan_mode("${fan_mode_5}");
   }
-  if (fan_count == 0) add_fan_mode(fan);
+  add_fan_mode(fan);
 
   id(fan_mode_slot_1) = fan_slots[0];
   id(fan_mode_slot_2) = fan_slots[1];
@@ -195,20 +191,16 @@
   id(fan_mode_slot_7) = fan_slots[6];
   id(fan_mode_slot_8) = fan_slots[7];
 
-  auto update_fan_slot = [&](lv_obj_t *button, lv_obj_t *icon, lv_obj_t *label, const std::string &value) {
-    const bool hidden = value.empty();
-    set_hidden(button, hidden);
-    set_checked(button, !hidden && fan == value);
-    if (!hidden) {
-      lv_label_set_text(icon, fan_icon(value));
-      lv_label_set_text(label, fan_name(value).c_str());
-    }
-  };
-  update_fan_slot(id(btn_fan_1), id(lbl_fan_1_icon), id(lbl_fan_1_value), id(fan_mode_slot_1));
-  update_fan_slot(id(btn_fan_2), id(lbl_fan_2_icon), id(lbl_fan_2_value), id(fan_mode_slot_2));
-  update_fan_slot(id(btn_fan_3), id(lbl_fan_3_icon), id(lbl_fan_3_value), id(fan_mode_slot_3));
-  update_fan_slot(id(btn_fan_4), id(lbl_fan_4_icon), id(lbl_fan_4_value), id(fan_mode_slot_4));
-  update_fan_slot(id(btn_fan_5), id(lbl_fan_5_icon), id(lbl_fan_5_value), id(fan_mode_slot_5));
-  update_fan_slot(id(btn_fan_6), id(lbl_fan_6_icon), id(lbl_fan_6_value), id(fan_mode_slot_6));
-  update_fan_slot(id(btn_fan_7), id(lbl_fan_7_icon), id(lbl_fan_7_value), id(fan_mode_slot_7));
-  update_fan_slot(id(btn_fan_8), id(lbl_fan_8_icon), id(lbl_fan_8_value), id(fan_mode_slot_8));
+  std::vector<std::string> fan_options;
+  int fan_selected = 0;
+  for (int i = 0; i < fan_count; i++) {
+    fan_options.push_back(fan_name(fan_slots[i]));
+    if (fan_slots[i] == fan) fan_selected = i;
+  }
+  if (fan_options.empty()) fan_options.push_back("--");
+
+  id(dd_fan).set_options(fan_options);
+  id(dd_fan).set_selected_index(fan_selected, LV_ANIM_OFF);
+  lv_dropdown_set_text(id(dd_fan).obj, "");
+  lv_label_set_text(id(lbl_fan_dropdown_icon), fan_icon(fan));
+  lv_label_set_text(id(lbl_fan_dropdown_text), fan_options[fan_selected].c_str());

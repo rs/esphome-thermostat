@@ -30,10 +30,10 @@ Typical peripherals and capabilities:
 - **ESPHome** firmware configuration and component orchestration
 - **LVGL UI** implemented through ESPHome for touch-first thermostat screens
 - **Home Assistant** integration for climate entities and automation
-- LCD touch UI screens for:
+- LCD touch UI controls for:
   - Current indoor temperature and target setpoint
-  - HVAC mode selection (Heat/Cool/Auto/Off)
-  - Fan mode controls
+  - HVAC mode selection from the main thermostat view
+  - Fan mode selection from the main thermostat view
   - Quick actions and status indicators
 
 ## Using `thermostat.yaml`

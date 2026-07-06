@@ -4,6 +4,10 @@ globals:
   - id: pending_target_temperature
     type: float
     initial_value: '20.0'
+  - id: dropdown_arc_guard_until_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
   - id: fan_mode_slot_1
     type: std::string
     initial_value: '"${fan_mode_1}"'

@@ -14,8 +14,6 @@ lvgl:
         - lvgl.page.show: thermostat_page
   pages:
     - !include pages/thermostat.yaml
-    - !include pages/mode.yaml
-    - !include pages/fan.yaml
   top_layer:
     widgets:
       - !include layers/voice_overlay.yaml

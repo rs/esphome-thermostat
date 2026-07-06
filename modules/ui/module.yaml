@@ -1,5 +1,11 @@
 # LVGL UI module.
 
+esphome:
+  on_boot:
+    - priority: -150
+      then:
+        - lambda: !include setup_dropdowns.cpp
+
 packages:
   fonts: !include fonts.yaml
   lvgl: !include lvgl.yaml
