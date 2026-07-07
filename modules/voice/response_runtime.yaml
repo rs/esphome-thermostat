@@ -1,0 +1,111 @@
+# Route voice assistant responses based on the Home Assistant-facing selector.
+
+select:
+  - platform: template
+    name: "Voice Response Output"
+    id: voice_response_output
+    icon: mdi:speaker-message
+    options:
+      - "On-board speaker"
+      - "Home Assistant media player"
+    initial_option: "On-board speaker"
+    restore_value: true
+    optimistic: true
+
+  - platform: template
+    name: "Voice Response Media Player"
+    id: external_voice_media_player
+    icon: mdi:speaker-wireless
+    options: !include ${voice_response_media_players_file}
+    restore_value: true
+    optimistic: true
+
+media_player:
+  - platform: speaker
+    name: "Voice Response Speaker"
+    id: board_voice_media_player
+    internal: true
+    buffer_size: 1000000
+    volume_initial: 1.0
+    volume_min: 1.0
+    volume_max: 1.0
+    announcement_pipeline:
+      speaker: board_speaker
+      format: WAV
+    on_idle:
+      - if:
+          condition:
+            lambda: |-
+              auto selected = id(voice_response_output).active_index();
+              return id(is_tts_active) && (!selected.has_value() || selected.value() == 0);
+          then:
+            - script.execute: finish_voice_interaction
+
+script:
+  - id: prepare_voice_interaction
+    mode: restart
+    then:
+      - media_player.stop:
+          id: board_voice_media_player
+          announcement: true
+      - script.execute: disable_speaker_playback
+      - if:
+          condition:
+            lambda: |-
+              auto selected = id(voice_response_output).active_index();
+              const std::string media_player = id(external_voice_media_player).current_option().str();
+              return selected.has_value() && selected.value() == 1 &&
+                     media_player.rfind("media_player.", 0) == 0;
+          then:
+            - homeassistant.service:
+                service: media_player.media_stop
+                data:
+                  entity_id: !lambda 'return id(external_voice_media_player).current_option().str();'
+
+voice_assistant:
+  id: va
+  on_tts_start:
+    - lambda: |-
+        id(is_listening) = false;
+        id(is_tts_active) = true;
+        lv_obj_clear_flag(id(voice_overlay), LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(id(bar_listening), LV_OBJ_FLAG_HIDDEN);
+    - lvgl.label.update:
+        id: lbl_voice_status
+        text: "Answering"
+  on_tts_end:
+    - if:
+        condition:
+          lambda: |-
+            auto selected = id(voice_response_output).active_index();
+            return !selected.has_value() || selected.value() == 0;
+        then:
+          - micro_wake_word.stop:
+              id: mww
+          - script.execute: enable_speaker_playback
+          - media_player.volume_set:
+              id: board_voice_media_player
+              volume: 100%
+          - media_player.play_media:
+              id: board_voice_media_player
+              media_url: !lambda 'return x;'
+              announcement: true
+        else:
+          - if:
+              condition:
+                lambda: |-
+                  const std::string media_player = id(external_voice_media_player).current_option().str();
+                  return media_player.rfind("media_player.", 0) == 0;
+              then:
+                - homeassistant.service:
+                    service: media_player.play_media
+                    data:
+                      entity_id: !lambda 'return id(external_voice_media_player).current_option().str();'
+                      media_content_type: music
+                      media_content_id: !lambda 'return x;'
+              else:
+                - lvgl.label.update:
+                    id: lbl_voice_status
+                    text: "No media player"
+                - delay: 1500ms
+          - script.execute: finish_voice_interaction

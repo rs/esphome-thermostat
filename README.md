@@ -71,7 +71,6 @@ substitutions:
   friendly_name: Living Room Thermostat
   base_light_sensor: none
   base_thermometer: none
-
 packages:
   thermostat: github://rs/esphome-thermostat/thermostat.yaml@main
 
@@ -130,6 +129,30 @@ Useful substitutions:
 - `base_thermometer_id`: ESPHome ID for the SHT45 component.
 - `base_temperature_sensor_id` / `base_temperature_sensor_name`: ESPHome ID and Home Assistant name for the SHT45 temperature reading.
 - `base_humidity_sensor_id` / `base_humidity_sensor_name`: ESPHome ID and Home Assistant name for the SHT45 humidity reading.
+- `voice_response_media_players_file`: absolute path to a YAML list of Home Assistant `media_player` entity IDs used by the `Voice Response Media Player` selector. Leave the default if you only use the on-board speaker.
+
+The device exposes a `Voice Response Output` selector in Home Assistant. Choose
+`On-board speaker` to play Assist responses through the Waveshare speaker, or
+`Home Assistant media player` to send the generated TTS URL to
+the entity selected in the `Voice Response Media Player` dropdown. ESPHome
+cannot auto-discover Home Assistant media players into a device selector, so
+provide the list in a file such as `/config/esphome/voice-media-players.yaml`:
+
+```yaml
+- media_player.homepod_salon
+- media_player.salon_3
+- media_player.tv_salon
+```
+
+Then set `voice_response_media_players_file` to that absolute path in the device
+substitutions. The generated TTS URL is sent with `media_player.play_media` as
+`music`.
+
+In Home Assistant media-player mode, wake-word detection restarts as soon as the
+response URL is handed off, and a new wake word calls `media_player.media_stop`
+on the configured media player before starting the next Assist request. This
+gives basic interruption behavior for long answers, subject to wake-word
+detection quality while another speaker is playing in the room.
 
 When `base_light_sensor` is `present`, the VEML7700 reading is used locally to
 adjust the fully lit screen brightness and to wake the dimmed display when a
