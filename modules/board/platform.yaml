@@ -20,8 +20,7 @@ esphome:
             id: es8311_codec
         - lambda: |-
             id(last_touch_ms) = millis();
-            id(es8311_codec).set_volume(id(speaker_volume));
-            id(number_volume).publish_state(id(speaker_volume) * 100.0f);
+        - script.execute: apply_speaker_volume
         - script.execute: refresh_climate_ui
 
 esp32:

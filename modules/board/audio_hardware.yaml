@@ -4,7 +4,7 @@ globals:
   - id: speaker_volume
     type: float
     restore_value: true
-    initial_value: '0.7'
+    initial_value: '0.6'
 
 output:
   - platform: gpio
@@ -57,11 +57,21 @@ speaker:
     channel: mono
 
 script:
+  - id: apply_speaker_volume
+    mode: restart
+    then:
+      - lambda: |-
+          if (id(speaker_volume) < 0.10f) id(speaker_volume) = 0.10f;
+          if (id(speaker_volume) > 1.0f) id(speaker_volume) = 1.0f;
+          id(board_speaker).set_volume(0.90f);
+          // The ES8311 output clips above roughly 85% on this board.
+          id(es8311_codec).set_volume(id(speaker_volume) * 0.85f);
+          id(number_volume).publish_state(id(speaker_volume) * 100.0f);
   - id: enable_speaker_playback
     mode: restart
     then:
       - script.stop: disable_speaker_playback
-      - lambda: 'id(es8311_codec).set_volume(id(speaker_volume));'
+      - script.execute: apply_speaker_volume
       - audio_dac.mute_off:
           id: es8311_codec
       - delay: 30ms

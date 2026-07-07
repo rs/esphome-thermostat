@@ -10,6 +10,26 @@ globals:
   - id: anim_dir
     type: int
     initial_value: '1'
+  - id: is_tts_active
+    type: bool
+    initial_value: 'false'
+
+script:
+  - id: finish_voice_interaction
+    mode: restart
+    then:
+      - script.execute: disable_speaker_playback
+      - lambda: |-
+          id(is_listening) = false;
+          id(is_tts_active) = false;
+          lv_obj_add_flag(id(bar_listening), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_add_flag(id(voice_overlay), LV_OBJ_FLAG_HIDDEN);
+      - if:
+          condition:
+            lambda: 'return id(switch_microphone).state;'
+          then:
+            - micro_wake_word.start:
+                id: mww
 
 interval:
   - interval: 100ms
@@ -52,7 +72,7 @@ voice_assistant:
   micro_wake_word: mww
   noise_suppression_level: 2
   auto_gain: 31dBFS
-  volume_multiplier: 4.0
+  volume_multiplier: 0.75
   on_client_connected:
     - lvgl.label.update:
         id: lbl_voice_status
@@ -65,6 +85,11 @@ voice_assistant:
               id: mww
   on_client_disconnected:
     - script.execute: disable_speaker_playback
+    - lambda: |-
+        id(is_listening) = false;
+        id(is_tts_active) = false;
+        lv_obj_add_flag(id(bar_listening), LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(id(voice_overlay), LV_OBJ_FLAG_HIDDEN);
     - lvgl.label.update:
         id: lbl_voice_status
         text: "Disconnected"
@@ -80,10 +105,16 @@ voice_assistant:
         id: lbl_voice_status
         text: "Listening"
   on_tts_start:
+    - lambda: 'id(is_tts_active) = true;'
+    - micro_wake_word.stop:
+        id: mww
     - script.execute: enable_speaker_playback
+  on_tts_end:
+    - lambda: 'id(is_tts_active) = true;'
   on_tts_stream_start:
     - lambda: |-
         id(is_listening) = false;
+        id(is_tts_active) = true;
         lv_obj_clear_flag(id(voice_overlay), LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(id(bar_listening), LV_OBJ_FLAG_HIDDEN);
     - lvgl.label.update:
@@ -92,38 +123,24 @@ voice_assistant:
     - micro_wake_word.stop:
         id: mww
   on_tts_stream_end:
-    - script.execute: disable_speaker_playback
-    - lvgl.label.update:
-        id: lbl_voice_status
-        text: "Ready"
+    - script.execute: finish_voice_interaction
   on_end:
-    - script.execute: disable_speaker_playback
-    - lambda: |-
-        id(is_listening) = false;
-        lv_obj_add_flag(id(bar_listening), LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(id(voice_overlay), LV_OBJ_FLAG_HIDDEN);
     - if:
         condition:
-          lambda: 'return id(switch_microphone).state;'
+          lambda: 'return !id(is_tts_active);'
         then:
-          - micro_wake_word.start:
-              id: mww
+          - script.execute: finish_voice_interaction
   on_idle:
-    - script.execute: disable_speaker_playback
-    - lambda: |-
-        id(is_listening) = false;
-        lv_obj_add_flag(id(bar_listening), LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(id(voice_overlay), LV_OBJ_FLAG_HIDDEN);
     - if:
         condition:
-          lambda: 'return id(switch_microphone).state;'
+          lambda: 'return !id(is_tts_active);'
         then:
-          - micro_wake_word.start:
-              id: mww
+          - script.execute: finish_voice_interaction
   on_error:
     - script.execute: disable_speaker_playback
     - lambda: |-
         id(is_listening) = false;
+        id(is_tts_active) = false;
         lv_obj_clear_flag(id(voice_overlay), LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(id(bar_listening), LV_OBJ_FLAG_HIDDEN);
     - lvgl.label.update:
