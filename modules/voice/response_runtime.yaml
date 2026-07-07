@@ -42,6 +42,23 @@ media_player:
             - script.execute: finish_voice_interaction
 
 script:
+  - id: apply_external_voice_media_player_volume
+    mode: restart
+    then:
+      - if:
+          condition:
+            lambda: |-
+              auto selected = id(voice_response_output).active_index();
+              const std::string media_player = id(external_voice_media_player).current_option().str();
+              return selected.has_value() && selected.value() == 1 &&
+                     media_player.rfind("media_player.", 0) == 0;
+          then:
+            - homeassistant.service:
+                service: media_player.volume_set
+                data:
+                  entity_id: !lambda 'return id(external_voice_media_player).current_option().str();'
+                  volume_level: !lambda 'return id(speaker_volume);'
+
   - id: prepare_voice_interaction
     mode: restart
     then:
@@ -97,6 +114,7 @@ voice_assistant:
                   const std::string media_player = id(external_voice_media_player).current_option().str();
                   return media_player.rfind("media_player.", 0) == 0;
               then:
+                - script.execute: apply_external_voice_media_player_volume
                 - homeassistant.service:
                     service: media_player.play_media
                     data:

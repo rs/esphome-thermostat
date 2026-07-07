@@ -154,6 +154,11 @@ on the configured media player before starting the next Assist request. This
 gives basic interruption behavior for long answers, subject to wake-word
 detection quality while another speaker is playing in the room.
 
+The device `Volume` number always controls the on-board speaker volume. When
+`Voice Response Output` is set to `Home Assistant media player`, the same value
+is also sent to the selected media player with `media_player.volume_set` before
+each response and whenever the slider changes.
+
 When `base_light_sensor` is `present`, the VEML7700 reading is used locally to
 adjust the fully lit screen brightness and to wake the dimmed display when a
 fast ambient-light change is detected. The light sensor is kept internal to

@@ -15,6 +15,7 @@ number:
       - lambda: |-
           id(speaker_volume) = x / 100.0f;
       - script.execute: apply_speaker_volume
+      - script.execute: apply_external_voice_media_player_volume
 
 switch:
   - platform: template
