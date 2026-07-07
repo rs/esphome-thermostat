@@ -129,24 +129,15 @@ Useful substitutions:
 - `base_thermometer_id`: ESPHome ID for the SHT45 component.
 - `base_temperature_sensor_id` / `base_temperature_sensor_name`: ESPHome ID and Home Assistant name for the SHT45 temperature reading.
 - `base_humidity_sensor_id` / `base_humidity_sensor_name`: ESPHome ID and Home Assistant name for the SHT45 humidity reading.
-- `voice_response_media_players_file`: absolute path to a YAML list of Home Assistant `media_player` entity IDs used by the `Voice Response Media Player` selector. Leave the default if you only use the on-board speaker.
 
 The device exposes a `Voice Response Output` selector in Home Assistant. Choose
 `On-board speaker` to play Assist responses through the Waveshare speaker, or
 `Home Assistant media player` to send the generated TTS URL to
-the entity selected in the `Voice Response Media Player` dropdown. ESPHome
-cannot auto-discover Home Assistant media players into a device selector, so
-provide the list in a file such as `/config/esphome/voice-media-players.yaml`:
-
-```yaml
-- media_player.homepod_salon
-- media_player.salon_3
-- media_player.tv_salon
-```
-
-Then set `voice_response_media_players_file` to that absolute path in the device
-substitutions. The generated TTS URL is sent with `media_player.play_media` as
-`music`.
+the entity entered in the `Voice Response Media Player` text field. Enter the
+full Home Assistant entity ID, for example `media_player.homepod_salon`. The
+field accepts values shaped like `media_player.some_entity`; Home Assistant will
+reject playback if the entity ID does not actually exist. The generated TTS URL
+is sent with `media_player.play_media` as `music`.
 
 In Home Assistant media-player mode, wake-word detection restarts as soon as the
 response URL is handed off, and a new wake word calls `media_player.media_stop`

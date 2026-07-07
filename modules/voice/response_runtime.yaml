@@ -12,11 +12,15 @@ select:
     restore_value: true
     optimistic: true
 
+text:
   - platform: template
     name: "Voice Response Media Player"
     id: external_voice_media_player
     icon: mdi:speaker-wireless
-    options: !include ${voice_response_media_players_file}
+    mode: text
+    min_length: 0
+    max_length: 128
+    pattern: "^$|^media_player\\.[a-z0-9_]+$"
     restore_value: true
     optimistic: true
 
@@ -49,14 +53,22 @@ script:
           condition:
             lambda: |-
               auto selected = id(voice_response_output).active_index();
-              const std::string media_player = id(external_voice_media_player).current_option().str();
+              const std::string media_player = id(external_voice_media_player).state;
+              auto is_valid_media_player = [](const std::string &entity_id) {
+                if (entity_id.rfind("media_player.", 0) != 0 || entity_id.size() <= 13) return false;
+                for (size_t i = 13; i < entity_id.size(); i++) {
+                  const char c = entity_id[i];
+                  if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_')) return false;
+                }
+                return true;
+              };
               return selected.has_value() && selected.value() == 1 &&
-                     media_player.rfind("media_player.", 0) == 0;
+                     is_valid_media_player(media_player);
           then:
             - homeassistant.service:
                 service: media_player.volume_set
                 data:
-                  entity_id: !lambda 'return id(external_voice_media_player).current_option().str();'
+                  entity_id: !lambda 'return id(external_voice_media_player).state;'
                   volume_level: !lambda 'return id(speaker_volume);'
 
   - id: prepare_voice_interaction
@@ -70,14 +82,22 @@ script:
           condition:
             lambda: |-
               auto selected = id(voice_response_output).active_index();
-              const std::string media_player = id(external_voice_media_player).current_option().str();
+              const std::string media_player = id(external_voice_media_player).state;
+              auto is_valid_media_player = [](const std::string &entity_id) {
+                if (entity_id.rfind("media_player.", 0) != 0 || entity_id.size() <= 13) return false;
+                for (size_t i = 13; i < entity_id.size(); i++) {
+                  const char c = entity_id[i];
+                  if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_')) return false;
+                }
+                return true;
+              };
               return selected.has_value() && selected.value() == 1 &&
-                     media_player.rfind("media_player.", 0) == 0;
+                     is_valid_media_player(media_player);
           then:
             - homeassistant.service:
                 service: media_player.media_stop
                 data:
-                  entity_id: !lambda 'return id(external_voice_media_player).current_option().str();'
+                  entity_id: !lambda 'return id(external_voice_media_player).state;'
 
 voice_assistant:
   id: va
@@ -111,14 +131,19 @@ voice_assistant:
           - if:
               condition:
                 lambda: |-
-                  const std::string media_player = id(external_voice_media_player).current_option().str();
-                  return media_player.rfind("media_player.", 0) == 0;
+                  const std::string media_player = id(external_voice_media_player).state;
+                  if (media_player.rfind("media_player.", 0) != 0 || media_player.size() <= 13) return false;
+                  for (size_t i = 13; i < media_player.size(); i++) {
+                    const char c = media_player[i];
+                    if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_')) return false;
+                  }
+                  return true;
               then:
                 - script.execute: apply_external_voice_media_player_volume
                 - homeassistant.service:
                     service: media_player.play_media
                     data:
-                      entity_id: !lambda 'return id(external_voice_media_player).current_option().str();'
+                      entity_id: !lambda 'return id(external_voice_media_player).state;'
                       media_content_type: music
                       media_content_id: !lambda 'return x;'
               else:
