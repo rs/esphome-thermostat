@@ -1,0 +1,56 @@
+THERMOSTAT BASE PCB — REVISION 1.2
+READ-ONLY GERBER AUDIT
+
+Input
+- Archive: hardware/rev1.2/thermostat_rev1.2_gerbers.zip
+- Extracted for inspection under /tmp/thermostat-gerber-final
+- Archive CRC check: PASS (zipfile.testzip() returned None)
+
+Archive/layer checks
+- 14 files present, including GTL/GBL copper, GKO outline, solder mask,
+  paste, silk, PTH drill, via drill, and FlyingProbeTesting.json.
+- Exactly two copper layers are present: Gerber_TopLayer.GTL and
+  Gerber_BottomLayer.GBL. No inner copper files are present.
+- Gerbonara 1.6.3 parsed all eight copper/mask/paste/silk/outline Gerbers
+  without an exception. Each ended with exactly one M02.
+- Both drill files ended with M30. FlyingProbeTesting.json parsed successfully
+  as JSON with the expected components/pins tables.
+
+Geometry and holes
+- Gerbonara's physical GKO bounding box is X=-0.127..80.127 mm and
+  Y=-80.127..0.127 mm. This is the expected 0.254 mm outline-stroke width
+  centered on the nominal 0..80 mm by -80..0 mm path, i.e. an 80 x 80 mm
+  nominal board.
+- Gerbonara copper bounding boxes: top X=2.5..77.5 mm, Y=-79.69905..-2.5
+  mm; bottom X=0.25654..79.74346 mm, Y=-79.74346..-0.25654 mm.
+- Gerbonara top-silkscreen bounding box reaches Y=-79.98521 mm, which is
+  inside the nominal -80 mm edge by approximately 0.01479 mm. Source review
+  identifies the near-edge geometry as decorative thermometer-section outline
+  POLY e4894 (width 3.937 mil), not LED1 or a copper/pad feature. The
+  previously identified LED1 designator overhang is absent. This decorative
+  silk clearance is very tight and should remain visible in the fab viewer;
+  it is nonfunctional but could be clipped by fabrication silk tolerances.
+- PTH drill file has 23 T02 1.000 mm holes. The 20 H1 header holes are all
+  present within 0.00005 mm of the expected 2 mm pitch set:
+  X=24.5..42.5 mm, Y=-13.5/-11.5 mm. The separate via drill file has 25
+  holes whose coordinate set exactly matches PTH T01.
+
+Power-fix pad/route presence
+- U4 LM66100 copper pad flashes: all six SC-70-6 pads are present at the
+  expected Gerber coordinates. Top-copper track records touch five active
+  pads; pin 4 is the intentional NC and has no route.
+- C12 220 nF copper pad flashes: both pads are present at the expected
+  coordinates, and top-copper track records start at both pads.
+- These checks establish generated pad and route records are present. They do
+  not claim full electrical connectivity from raster/vector rendering; native
+  DRC and schematic/PCB semantic checks remain the connectivity authorities.
+
+Independent render
+- Gerbonara-rendered copper-only outputs were saved for visual review:
+  hardware/rev1.2/gerber_top.svg and gerber_top.png;
+  hardware/rev1.2/gerber_bottom.svg and gerber_bottom.png.
+- These renders are visual review artifacts, not a fabrication DFM engine and
+  not proof of full electrical connectivity.
+- Gerbonara emitted one non-fatal Excellon warning: `G90` appears after the
+  drill header terminator. It still parsed both drill files and produced valid
+  bounds; native export/fab review should retain this warning for awareness.

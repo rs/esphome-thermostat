@@ -1,0 +1,72 @@
+THERMOSTAT BASE PCB — REVISION 1.2
+
+Changes
+- Retain the revision 1.1 mirrored H1 header for component-side face-to-face mating.
+- Add U4 LM66100DCKR (LCSC C2869734) between buck +5V and +5V_DISPLAY.
+  VIN pin 1 is on buck +5V; VOUT pin 6 and CE pin 3 are on +5V_DISPLAY.
+  GND pin 2 and unused ST pin 5 go to GND; NC pin 4 is unconnected.
+  H1 pin 2 is on +5V_DISPLAY. Buck feedback, bulk output capacitors, and TP2
+  remain on the upstream +5V rail.
+- Add C12 220 nF / 100 V X7R, CC0805KKX7R0BB224 (LCSC C513710),
+  directly to U2 VIN pin 2 and PGND pin 1. Move C2 to provide room and
+  route its supply through two vias to preserve clearance.
+- Add C13/C14 1 uF local input/output decoupling for U4, using the existing
+  CL10A105KB8NNNC component type.
+- Move LED1's designator inside the board and enlarge the H1 mating label.
+
+USB usage
+Use the Waveshare USB-UART connector for programming with the base powered.
+The Waveshare native USB connector is directly tied to its common VBUS;
+the base-side LM66100 does not protect a host attached to that native port
+from base power. USB-UART has a separate reverse-blocking circuit on the
+Waveshare board. All grounds remain common.
+
+Hardware validation after assembly
+1. With all power removed, inspect H1 alignment and check for rail-to-ground
+   shorts. Verify H1 pin 2 connects to U4 VOUT, not directly to buck +5V.
+2. Apply 24 V DC only. Check TP1 (~24 V), TP2 (~5 V), H1 pin 2 (near 5 V,
+   with the load-dependent U4 drop), and TP3 (~3.3 V) with the display fitted.
+3. Apply USB-UART power only, with 24 V disconnected. Verify the display
+   starts and measure reverse current into the buck side of U4.
+4. Exercise both sources and each removal order. Check startup, full
+   backlight, Wi-Fi activity, and speaker load; measure ripple and temperature.
+   The LMR36510 remains a 1 A converter. Full-display peak-load margin has
+   not been established by these design checks.
+
+Design verification
+- EasyEDA Pro 2.2.47.7: rebuilt ground copper, then ran the complete
+  93-category PCB DRC. Final result: All(0), including connectivity checks.
+- Native schematic DRC: 0 fatal errors, 0 errors, 1 warning. The warning is
+  H1's intentional custom mirrored footprint differing from the supplier
+  library part. Do not replace it with the standard unmirrored footprint.
+- Independent decoded-source audit: 0 failures, 0 warnings; schematic/PCB
+  pin-net consistency, all 25 component/channel links, library closure,
+  header geometry, outline, and SQLite integrity pass.
+- Native portable .epro: ZIP CRC and library closure pass. Both schematic
+  and PCB record lists exactly match the saved .eprj documents.
+- Native BOM includes 22 fitted parts, including U4/C12/C13/C14 with the
+  intended supplier numbers. Placement export includes these 22 parts plus
+  TP1/TP2/TP3. Both files retain EasyEDA's native tab-delimited CSV format;
+  BOM is UTF-8 and placement is UTF-16.
+- The Gerber archive is the native export from the final DRC-clean layout.
+  See gerber_audit.txt for the separate exported-file checks.
+- No manufacturer DFM sign-off is claimed. EasyEDA's online order/layer
+  validation displayed "validate layer fail"; local Gerber export succeeded.
+- No assembled revision 1.2 board has been tested. Startup, load margin,
+  ripple, temperature, and reverse-current behavior require bench tests.
+
+Files
+- ../../base_pcb.eprj is the updated editable project.
+- base_pcb_rev1.2_protected.epro is the portable project with libraries.
+- thermostat_rev1.2_gerbers.zip is the fabrication layer/drill archive.
+- thermostat_rev1.2_bom.csv and thermostat_rev1.2_placement.csv are native
+  assembly exports; confirm component orientation in the assembler's preview.
+- The root base_pcb_rev1.1_mirrored.epro is an older revision and does not
+  contain these power fixes.
+- The pre-fix main project is retained in
+  ../../base_pcb_backup/base_pcb-before-power-fixes-2026-11-07.eprj.
+
+References
+https://www.ti.com/lit/ds/symlink/lm66100.pdf
+https://www.ti.com/lit/ds/symlink/lmr36510.pdf
+https://files.waveshare.com/wiki/ESP32-S3-Touch-LCD-4B/ESP32-S3-Touch-LCD-4B.pdf

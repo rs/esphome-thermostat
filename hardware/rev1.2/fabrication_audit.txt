@@ -1,0 +1,51 @@
+THERMOSTAT BASE PCB — REVISION 1.2
+READ-ONLY SOURCE AUDIT
+
+Audit input
+- Final SQLite project: ../../base_pcb.eprj
+- Rechecked after replacing the main project from the validated staging copy.
+- Validator: hardware/rev1.2/validate_revision.py
+- Run date: 2026-11-07
+- This report covers decoded EasyEDA schematic/PCB records only. Native DRC,
+  DFM, and final Gerber/archive checks are separate release gates.
+
+Independent results
+- SQLite integrity: PASS.
+- Device/symbol/footprint closure: PASS (38 devices, 67 components).
+- Schematic component closure: PASS (67 schematic components).
+- PCB component/channel closure: PASS (25 PCB components, 25/25 channel links).
+- Physical schematic wire graph: PASS; no connected wire group carries multiple
+  explicit net names. NET names are taken from the owning WIRE record, not the
+  display position of the NET attribute.
+- Schematic-to-PCB pin/net consistency: PASS for all resolvable named pins.
+- PCB primitive IDs: PASS (265 unique primitive IDs in the checked namespaces).
+- Board outline: PASS; layer-11 outline has the expected 80 x 80 mm extrema.
+
+Power-path semantic checks
+- U4 LM66100DCKR / LCSC C2869734: pin 1 +5V, pin 2 GND, pin 3
+  +5V_DISPLAY, pin 4 NC, pin 5 GND, pin 6 +5V_DISPLAY on both schematic and
+  PCB.
+- C12: PCB position (1770, -1090) mil, rotation 180°; pin 1 +24V and pin 2
+  GND on both schematic and PCB.
+- C13: pin 1 +5V and pin 2 GND on both schematic and PCB.
+- C14: pin 1 +5V_DISPLAY and pin 2 GND on both schematic and PCB.
+
+Header and geometry
+- H1 mirrored pad positions PASS. Checked pins: 1 (1673.2276,-531.496),
+  2 (1673.2276,-452.756), 3 (1594.4876,-531.496), 4
+  (1594.4876,-452.756), 19 (964.5676,-531.496), and 20
+  (964.5676,-452.756) mil.
+- H1 logical mapping PASS: pin 1 SDA, pin 2 +5V_DISPLAY, pin 3 SCL, pin 4
+  3V3, pins 19/20 GND.
+- LM66100/C513710 native library identities PASS; C12 is 220 nF / 100 V.
+
+Scope and limitations
+- This is an independent decoded-source audit, not a substitute for native
+  EasyEDA DRC/DFM or inspection of the final exported Gerbers.
+- Final portable archive check: ZIP CRC and library closure PASS. The native
+  .epro schematic and PCB records exactly match the saved project documents.
+- See validation.txt for native DRC results and gerber_audit.txt for the
+  separate fabrication-layer inspection.
+- The repository also contains unrelated worktree changes in the climate/UI
+  module YAML files and an untracked native project export under base/; those
+  are outside this PCB audit.
