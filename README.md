@@ -25,6 +25,13 @@ Typical peripherals and capabilities:
 - ESP32-S3 Wi-Fi connectivity
 - GPIO/I2C/SPI expansion for sensors and controls
 
+The default base PCB is revision 1.2 with the mirrored Waveshare header
+and LM66100 display power protection.
+Open the [portable EasyEDA Pro project](base_pcb.epro) or the
+[editable project](base_pcb.eprj). The [revision 1.2 fabrication files](hardware/rev1.2/)
+include Gerbers, the bill of materials, and component placement.
+The [revision 1.1 project](hardware/rev1.1/base_pcb_rev1.1_mirrored.epro) is also available.
+
 ## Software Stack
 
 - **ESPHome** firmware configuration and component orchestration
@@ -101,7 +108,7 @@ esphome upload my-thermostat.yaml
 ```
 
 In Home Assistant, open the ESPHome integration entry for the thermostat and
-enable service/action calls for the device. The UI uses `homeassistant.action`
+enable service/action calls for the device. The UI uses `homeassistant.service`
 to call `climate.set_temperature`, `climate.set_hvac_mode`, and
 `climate.set_fan_mode`; if service calls are disabled, the display can still
 read the climate entity but changes made on the screen will not update Home

@@ -56,15 +56,14 @@ Design verification
   ripple, temperature, and reverse-current behavior require bench tests.
 
 Files
-- ../../base_pcb.eprj is the updated editable project.
-- base_pcb_rev1.2_protected.epro is the portable project with libraries.
+- ../../base_pcb.eprj is the editable revision 1.2 project.
+- ../../base_pcb.epro and base_pcb_rev1.2_protected.epro are identical
+  portable revision 1.2 projects with libraries.
 - thermostat_rev1.2_gerbers.zip is the fabrication layer/drill archive.
 - thermostat_rev1.2_bom.csv and thermostat_rev1.2_placement.csv are native
   assembly exports; confirm component orientation in the assembler's preview.
-- The root base_pcb_rev1.1_mirrored.epro is an older revision and does not
-  contain these power fixes.
-- The pre-fix main project is retained in
-  ../../base_pcb_backup/base_pcb-before-power-fixes-2026-11-07.eprj.
+- ../rev1.1/base_pcb_rev1.1_mirrored.epro contains the earlier mirrored
+  revision 1.1 design.
 
 References
 https://www.ti.com/lit/ds/symlink/lm66100.pdf
