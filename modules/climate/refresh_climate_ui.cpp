@@ -87,6 +87,22 @@
       lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICKABLE);
     }
   };
+  auto update_options = [](auto *dropdown, std::vector<std::string> &labels,
+                           std::vector<std::string> &stored_labels) {
+    if (labels == stored_labels) return;
+    // ESPHome's pointer-based dropdown keeps these strings until the next update.
+    // Swapping keeps the old labels alive while the widget replaces its options.
+    stored_labels.swap(labels);
+    using Options = std::decay_t<decltype(dropdown->get_options())>;
+    if constexpr (std::is_same_v<Options, std::vector<std::string>>) {
+      dropdown->set_options(stored_labels);
+    } else {
+      Options options;
+      options.init(stored_labels.size());
+      for (const auto &label : stored_labels) options.push_back(label.c_str());
+      dropdown->set_options(std::move(options));
+    }
+  };
 
   const float current = id(ha_current_temperature).state;
   const float ha_target = id(ha_target_temperature).state;
@@ -173,12 +189,13 @@
   }
   if (mode_options.empty()) mode_options.push_back("--");
 
-  id(dd_mode).set_options(mode_options);
+  static std::vector<std::string> mode_labels;
+  update_options(id(dd_mode), mode_options, mode_labels);
   id(dd_mode).set_selected_index(mode_selected, LV_ANIM_OFF);
   set_dropdown_ready(id(dd_mode).obj, hvac_modes_known);
   lv_dropdown_set_text(id(dd_mode).obj, "");
   lv_label_set_text(id(lbl_mode_dropdown_icon), mode_icon(display_mode));
-  lv_label_set_text(id(lbl_mode_dropdown_text), mode_options[mode_selected].c_str());
+  lv_label_set_text(id(lbl_mode_dropdown_text), mode_labels[mode_selected].c_str());
 
   std::string fan_slots[8];
   int fan_count = 0;
@@ -234,7 +251,8 @@
   }
   if (fan_options.empty()) fan_options.push_back("--");
 
-  id(dd_fan).set_options(fan_options);
+  static std::vector<std::string> fan_labels;
+  update_options(id(dd_fan), fan_options, fan_labels);
   id(dd_fan).set_selected_index(fan_selected, LV_ANIM_OFF);
   set_dropdown_ready(id(dd_fan).obj, fan_modes_known && fan_count > 0);
   lv_dropdown_set_text(id(dd_fan).obj, "");
