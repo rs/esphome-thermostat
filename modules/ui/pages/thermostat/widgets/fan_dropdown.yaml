@@ -66,8 +66,8 @@ dropdown:
             }
             return !value.empty() && value != "unknown" && value != "unavailable";
         then:
-          - homeassistant.action:
-              action: climate.set_fan_mode
+          - homeassistant.service:
+              service: climate.set_fan_mode
               data:
                 entity_id: ${climate_entity}
                 fan_mode: !lambda |-

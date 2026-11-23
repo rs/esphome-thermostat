@@ -53,8 +53,8 @@ dropdown:
         condition:
           lambda: return text == "OFF";
         then:
-          - homeassistant.action:
-              action: climate.set_hvac_mode
+          - homeassistant.service:
+              service: climate.set_hvac_mode
               data:
                 entity_id: ${climate_entity}
                 hvac_mode: "off"
@@ -62,8 +62,8 @@ dropdown:
         condition:
           lambda: return text == "HEAT";
         then:
-          - homeassistant.action:
-              action: climate.set_hvac_mode
+          - homeassistant.service:
+              service: climate.set_hvac_mode
               data:
                 entity_id: ${climate_entity}
                 hvac_mode: heat
@@ -71,8 +71,8 @@ dropdown:
         condition:
           lambda: return text == "COOL";
         then:
-          - homeassistant.action:
-              action: climate.set_hvac_mode
+          - homeassistant.service:
+              service: climate.set_hvac_mode
               data:
                 entity_id: ${climate_entity}
                 hvac_mode: cool
@@ -84,14 +84,14 @@ dropdown:
               condition:
                 lambda: !include ../../../../climate/should_send_auto_hvac_mode.cpp
               then:
-                - homeassistant.action:
-                    action: climate.set_hvac_mode
+                - homeassistant.service:
+                    service: climate.set_hvac_mode
                     data:
                       entity_id: ${climate_entity}
                       hvac_mode: auto
               else:
-                - homeassistant.action:
-                    action: climate.set_hvac_mode
+                - homeassistant.service:
+                    service: climate.set_hvac_mode
                     data:
                       entity_id: ${climate_entity}
                       hvac_mode: heat_cool
@@ -99,8 +99,8 @@ dropdown:
         condition:
           lambda: return text == "DRY";
         then:
-          - homeassistant.action:
-              action: climate.set_hvac_mode
+          - homeassistant.service:
+              service: climate.set_hvac_mode
               data:
                 entity_id: ${climate_entity}
                 hvac_mode: dry
@@ -108,8 +108,8 @@ dropdown:
         condition:
           lambda: return text == "FAN";
         then:
-          - homeassistant.action:
-              action: climate.set_hvac_mode
+          - homeassistant.service:
+              service: climate.set_hvac_mode
               data:
                 entity_id: ${climate_entity}
                 hvac_mode: fan_only

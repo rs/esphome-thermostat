@@ -135,8 +135,8 @@ script:
   - id: send_target_temperature
     mode: restart
     then:
-      - homeassistant.action:
-          action: climate.set_temperature
+      - homeassistant.service:
+          service: climate.set_temperature
           data:
             entity_id: ${climate_entity}
             temperature: !lambda |-
